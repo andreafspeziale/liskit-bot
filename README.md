@@ -32,4 +32,5 @@ Run the script
     
 ## ToDo
 
-    fabfile
+    - fabfile
+    - update readme with /setcommand in bothfather

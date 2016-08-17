@@ -15,13 +15,11 @@ def update_production():
         make_deploy(False)
 
 # workaround for fabric sudo issue
-def run_su(command, user="root"):
+def run_su(command, user=parser.get('deploy_config', 'user')):
     return run('su %s -c "%s"' % (user, command))
 
 def make_deploy(isRoot):
     if(isRoot):
-        run('cd '+parser.get('deploy_config', 'path'))
-        run('git pull')
+        run('git -C '+parser.get('deploy_config', 'path')+' pull')
     else:
-        run_su('cd '+parser.get('deploy_config', 'path'))
-        run_su('git pull')
+        run_su('git -C '+parser.get('deploy_config', 'path')+' pull')

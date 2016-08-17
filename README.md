@@ -42,3 +42,4 @@ It will ask you to select the bot and enter the helpers
 
     - change fabfile config to class
     - go deeper with the bot development
+    - test

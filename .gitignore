@@ -2,3 +2,4 @@ config.ini
 envLiskit
 .idea
 .DS_Store
+*.pyc

@@ -10,9 +10,9 @@ Creating a simple telegram bot using a raspberry and telepot in python. Checking
     - pip
     - virtualenv
     
-## Creating a bot
+## Creating a Bot
 You will need to create a bot with telegram BotFather.
-On Telegram, open the @BotFather profile, and start to talk with “him”. 
+On telegram, open the @BotFather profile, and start to talk with “him”. 
 
 The BotFather will ask you to read a manual, the first thing you’ll have to do is to create a brand new bot. 
 Type the command “/newbot” and follow the instruction.
@@ -30,7 +30,15 @@ Run the script
 
     - python liskit.py
     
+## Setting Bot Helpers
+
+Go to telegram and write this command to the BotFather
+
+    - /setcommand
+
+It will ask you to select the bot and enter the helpers
+    
 ## ToDo
 
-    - fabfile
-    - update readme with /setcommand in bothfather
+    - change fabfile config to class
+    - go deeper with the bot development

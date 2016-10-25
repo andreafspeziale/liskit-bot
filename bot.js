@@ -187,5 +187,5 @@ bot.onText(/\/votes (.+)/, function (msg, params) {
 });
 
 
-functions.checkBlocks ();
-setInterval (functions.checkBlocks, 10000);
+/*functions.checkBlocks ();
+setInterval (functions.checkBlocks, 10000);*/

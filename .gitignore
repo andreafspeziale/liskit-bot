@@ -1,5 +1,6 @@
-config.ini
-envLiskit
-.idea
+config.json
+node_modules
+.idea/
 .DS_Store
-*.pyc
+shift-bot.log
+monitor.json

@@ -1,0 +1,13 @@
+{
+  "dependencies": {
+    "async": "^2.1.2",
+    "colors": "^1.1.2",
+    "lodash": "^4.16.4",
+    "morgan": "^1.7.0",
+    "node-telegram-bot-api": "^0.24.0",
+    "request": "^2.75.0"
+  },
+  "scripts": {
+    "start": "nodemon bot.js"
+  }
+}

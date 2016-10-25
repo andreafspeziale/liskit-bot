@@ -1,44 +1,21 @@
-#Liskit Bot
-Creating a simple telegram bot using a raspberry and telepot in python. Checking the service and machine status with
-  
-    - /ping
-    - /live
+#Liskitbot
+With love by liskit delegate, for donation 10310263204519541551L
 
-## Prereq
-    - telegram (https://telegram.org/)
-    - python
-    - pip
-    - virtualenv
-    
-## Creating a Bot
-You will need to create a bot with telegram BotFather.
-On telegram, open the @BotFather profile, and start to talk with “him”. 
+##(@LiskitBot and TestnetLiskitBot)
+Explore the Lisk network retrieving information about your delegate
 
-The BotFather will ask you to read a manual, the first thing you’ll have to do is to create a brand new bot. 
-Type the command “/newbot” and follow the instruction.
-
-It will return an api key and you have to put it in the example.config.ini file renaming it in config.ini.
-
-## Run
-    
-    - clone the repo
-    - inside create a virtualenv like this: virtualenv envLiskit
-    - activate it with source /envLiskit/bin/activate
-    - pip install telepot
-    
-Run the script
-
-    - python liskit.py
-    
-## Setting Bot Helpers
-
-Go to telegram and write this command to the BotFather
-
-    - /setcommand
-
-It will ask you to select the bot and enter the helpers
-    
-## ToDo
-
-    - change fabfile config to class
-    - go deeper with the bot development
+##Available commands
+ 
+    - /ping (check bot status)
+    - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)
+    - /balance delegateName (check balance for delegate name)
+    - /rank delegateName (check rank for delegate)
+    - /height (check height from an official node)
+    - /status IP (check height from delegate node)
+    - /list (show the delegates you are monitoring)
+    - /uptime delegateName (check uptime for delegate name)
+    - /pkey delegateName (check public key for delegate name)
+    - /address delegateName (check address for delegate name)
+    - /voters delegateName (check voters of delegate name)
+    - /votes delegateName (check votes made by delegate name)
+ 

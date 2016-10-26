@@ -46,7 +46,7 @@ bot.onText(/\/height/, function (msg) {
     console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + msg.date + "\n\n");
     var fromId = msg.from.id;
     functions.height().then(function(res) {
-        bot.sendMessage(fromId, "The official blockchain height is "+res.height+" by explorer.lisknode.io");
+        bot.sendMessage(fromId, "The official blockchain height is "+res.height+" by official liskit node");
     }, function (err) {
         bot.sendMessage(fromId, err);
     });

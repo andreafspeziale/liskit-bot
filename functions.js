@@ -346,7 +346,7 @@ exports.pkey = function (delegate) {
 exports.address = function (delegate) {
     return new Promise(function (resolve, reject) {
         isDelegate(delegate).then(function (res) {
-            resolve("Your address is actually: " + del.address + "%");
+            resolve("Your address is actually: " + del.address);
         }, function (err) {
             reject(err);
         })

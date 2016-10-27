@@ -403,3 +403,63 @@ exports.votes = function (delegate) {
         })
     });
 }
+
+exports.markets  = function (exchange) {
+    return new Promise(function (resolve, reject) {
+        switch (exchange) {
+            case "bittrex":
+                request('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-lsk', function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        var data = JSON.parse(body);
+                        resolve({
+                            "exchange": exchange.toUpperCase(),
+                            "volume": data.result[0].Volume,
+                            "high": data.result[0].High,
+                            "low": data.result[0].Low,
+                            "last": data.result[0].Last
+                        });
+                    }else {
+                        console.log(error);
+                        reject("Something went wrong with Bittrex API");
+                    }
+                });
+                break;
+            case "poloniex":
+                request('https://poloniex.com/public?command=returnTicker', function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        var data = JSON.parse(body);
+                        resolve({
+                            "exchange": exchange.toUpperCase(),
+                            "volume": data['BTC_LSK'].baseVolume,
+                            "high": data['BTC_LSK'].high24hr,
+                            "low": data['BTC_LSK'].low24hr,
+                            "last": data['BTC_LSK'].last
+                        });
+                    }else {
+                        console.log(error);
+                        reject("Something went wrong with Poloniex API");
+                    }
+                });
+                break;
+            case "bitsquare":
+                request('https://market.bitsquare.io/api/ticker/?market=lsk_btc', function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        var data = JSON.parse(body);
+                        resolve({
+                             "exchange": exchange.toUpperCase(),
+                             "volume": "left " + data['lsk_btc'].volume_left + "/ right " + data['lsk_btc'].volume_right,
+                             "high": data['lsk_btc'].high,
+                             "low": data['lsk_btc'].low,
+                             "last": data['lsk_btc'].last
+                        });
+                    }else {
+                        console.log(error);
+                        reject("Something went wrong with Bitsquare API");
+                    }
+                });
+                break;
+            default:
+                reject("You can check different markets data with: \n/markets poloniex\n/markets bittrex\n/markets bitsquare");
+        }
+    });
+};

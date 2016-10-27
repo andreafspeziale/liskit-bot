@@ -186,6 +186,18 @@ bot.onText(/\/votes (.+)/, function (msg, params) {
     });
 });
 
+/**
+ * List Lisk markets
+ */
+bot.onText(/\/markets (.+)/, function (msg, params) {
+    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + msg.date + "\n\n");
+    var fromId = msg.from.id;
+    functions.markets(params[1]).then(function(res) {
+        bot.sendMessage(fromId, "Last 24 hour markets summary for Lisk by "+ res.exchange + ":\n\nVolume --> " + res.volume + "\nHigh --> " + res.high + "\nLow --> " + res.low + "\nLast --> " + res.last);
+    }, function (err) {
+        bot.sendMessage(fromId, err);
+    });
+});
 
 functions.checkBlocks ();
 setInterval (functions.checkBlocks, 10000);

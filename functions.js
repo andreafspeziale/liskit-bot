@@ -59,20 +59,45 @@ var isWatching = function (delegate) {
  * @param delegate
  * Chek if is delegate or not
  */
+
+ var browseDelegate = function (pageCounter) {
+     return new Promise(function (resolve, reject) {
+         request('http://' + config.node + '/api/delegates/?limit=101&offset=' + pageCounter + '0&orderBy=rate:asc', function (error, response, body) {
+             if (!error && response.statusCode == 200) {
+                 var res = JSON.parse(body)
+                 if(res.delegates.length)
+                    resolve(res);
+             } else {
+                 reject(error);
+             }
+         })
+     });
+ };
+
 var isDelegate = function (delegate) {
     return new Promise(function (resolve, reject) {
-        request('http://' + config.node + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                var delegates = JSON.parse(body);
-                for (var i = 0; i < delegates.delegates.length; i++) {
-                    if (delegate.indexOf (delegates.delegates[i].username) != -1) {
-                        del = delegates.delegates[i];
-                        resolve(true);
+        var pageCounter = 0;
+        var numberOfDelegates = 0;
+        browseDelegate(pageCounter).then(function(res) {
+            numberOfDelegates = res.totalCount;
+            for(pageCounter; pageCounter < numberOfDelegates; pageCounter += 101) {
+                console.log('pageCounter ',pageCounter);
+                browseDelegate(pageCounter).then(function(res) {
+                    var delegates = res;
+                    for (var i = 0; i < delegates.delegates.length; i++) {
+                        console.log(delegates.delegates[i].username)
+                        if (delegate.indexOf (delegates.delegates[i].username) != -1) {
+                            del = delegates.delegates[i];
+                            resolve(true);
+                        }
                     }
-                }
-            } else {
-                console.log("isDelegate: something went wrong with the request\n\n");
+                }, function (err) {
+                    console.log(err);
+                    reject(false);
+                });
             }
+        }, function (err) {
+            console.log(err);
             reject(false);
         });
     });

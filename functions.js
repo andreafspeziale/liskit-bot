@@ -62,7 +62,7 @@ var isWatching = function (delegate) {
 
  var browseDelegate = function (pageCounter) {
      return new Promise(function (resolve, reject) {
-         request('http://' + config.node + '/api/delegates/?limit=101&offset=' + pageCounter + '0&orderBy=rate:asc', function (error, response, body) {
+         request('http://' + config.node + '/api/delegates/?limit=101&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
              if (!error && response.statusCode == 200) {
                  var res = JSON.parse(body)
                  if(res.delegates.length)
@@ -81,7 +81,6 @@ var isDelegate = function (delegate) {
         browseDelegate(pageCounter).then(function(res) {
             numberOfDelegates = res.totalCount;
             for(pageCounter; pageCounter < numberOfDelegates; pageCounter += 101) {
-                console.log('pageCounter ',pageCounter);
                 browseDelegate(pageCounter).then(function(res) {
                     var delegates = res;
                     for (var i = 0; i < delegates.delegates.length; i++) {

@@ -360,12 +360,43 @@ exports.uptime = function (delegate) {
 exports.pkey = function (delegate) {
     return new Promise(function (resolve, reject) {
         isDelegate(delegate).then(function (res) {
-            resolve("Your public key is actually: " + del.publicKey + "%");
+            console.log(del);
+            resolve("Your public key is actually: " + del.publicKey);
         }, function (err) {
             reject(err);
         })
     });
 }
+
+exports.findByPkey = function (pkey) {
+    console.log(pkey);
+    return new Promise(function (resolve, reject) {
+        var pageCounter = 0;
+        var numberOfDelegates = 0;
+        browseDelegate(pageCounter).then(function(res) {
+            numberOfDelegates = res.totalCount;
+            for(pageCounter; pageCounter < numberOfDelegates; pageCounter += 101) {
+                browseDelegate(pageCounter).then(function(res) {
+                    var delegates = res;
+                    for (var i = 0; i < delegates.delegates.length; i++) {
+                        if (pkey.indexOf (delegates.delegates[i].publicKey) != -1) {
+                            if(delegates.delegates[i].username)
+                                resolve(delegates.delegates[i].username);
+                            else
+                                resolve(delegates.delegates[i].address);
+                        }
+                    }
+                }, function (err) {
+                    console.log(err);
+                    reject(false);
+                });
+            }
+        }, function (err) {
+            console.log(err);
+            reject(false);
+        });
+    });
+};
 
 exports.address = function (delegate) {
     return new Promise(function (resolve, reject) {

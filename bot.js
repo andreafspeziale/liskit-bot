@@ -17,7 +17,7 @@ var bot = new TelegramBot (config.telegram.token, {polling: true});
 bot.onText(/\/start/, function (msg) {
     console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from an official node)\n - /status IP (check height from delegate node)\n - /list (show the delegates you are monitoring)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from an official node)\n - /status IP (check height from delegate node)\n - /list (show the delegates you are monitoring)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
@@ -26,7 +26,7 @@ bot.onText(/\/start/, function (msg) {
 bot.onText(/\/help/, function (msg) {
     console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from an official node)\n - /status IP (check height from delegate node)\n - /list (show the delegates you are monitoring)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from an official node)\n - /status IP (check height from delegate node)\n - /list (show the delegates you are monitoring)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
@@ -140,6 +140,19 @@ bot.onText(/\/pkey (.+)/, function (msg, params) {
     console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
     var fromId = msg.from.id;
     functions.pkey(params[1]).then(function(res) {
+        bot.sendMessage(fromId, res);
+    }, function (err) {
+        bot.sendMessage(fromId, "Error, please enter a valid delegate name");
+    });
+});
+
+/**
+ * Find delegate public key
+ */
+bot.onText(/\/findbypkey (.+)/, function (msg, params) {
+    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    var fromId = msg.from.id;
+    functions.findByPkey(params[1]).then(function(res) {
         bot.sendMessage(fromId, res);
     }, function (err) {
         bot.sendMessage(fromId, "Error, please enter a valid delegate name");

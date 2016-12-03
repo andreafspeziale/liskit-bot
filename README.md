@@ -18,6 +18,7 @@ Explore the Lisk network retrieving information about your delegate
     - /list (show the delegates you are monitoring)
     - /uptime delegateName (check uptime for delegate name)
     - /pkey delegateName (check public key for delegate name)
+    - /findbypkey pkey (find delegate from public key)
     - /address delegateName (check address for delegate name)
     - /voters delegateName (check voters of delegate name)
     - /votes delegateName (check votes made by delegate name)

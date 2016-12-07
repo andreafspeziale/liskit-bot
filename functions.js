@@ -15,6 +15,9 @@ var delegateList = [];
 var alerted = {};
 var alive = {};
 
+/*
+    TODO  add logic to use the best node for checking blocks etc. as the autorebuilder script
+*/
 
 /**
  * Save or load delegate in monitor
@@ -46,7 +49,7 @@ var delegateMonitor = loadDelegateMonitor();
  */
 var isWatching = function (delegate) {
     return new Promise(function (resolve, reject) {
-        if(delegate in delegateMonitor) {
+        if(delegate in delegateMonitor.failures) {
             resolve(true);
         } else {
             reject(false);
@@ -208,6 +211,16 @@ exports.status = function (node) {
     });
 };
 
+/*
+    TODO  functions.forged same logic of monitoring start / stop etc
+*/
+
+exports.forged = function (command, delegate, fromId) {
+    return new Promise(function (resolve, reject){
+
+    });
+}
+
 exports.monitoring = function (command, delegate, fromId){
     return new Promise(function (resolve, reject){
         if (command == "start" || command == "stop") {
@@ -215,14 +228,16 @@ exports.monitoring = function (command, delegate, fromId){
                 if(command=="start") {
                     log.debug("monitoring func: ", "command start");
                     // check if is already in
+
                         isWatching(delegate).then(function (res) {
+
                             //if is in --> check if is asked from same chatId
-                            if(delegateMonitor[delegate].indexOf (fromId) != -1){
+                            if(delegateMonitor.failures[delegate].indexOf (fromId) != -1){
                                 // from same chat id
                                 reject("Waching on " + delegate + " already activated");
                             } else {
                                 // different chat id, so adding it to watching
-                                delegateMonitor [delegate].push (fromId);
+                                delegateMonitor.failures[delegate].push (fromId);
                                 saveDelegateMonitor().then(function (res) {
                                     resolve("The watching has been activated for: " + delegate);
                                 }, function (err) {
@@ -231,7 +246,7 @@ exports.monitoring = function (command, delegate, fromId){
                             }
                         }, function (err) {
                             //if is not in --> enable the watch
-                            delegateMonitor [delegate] = [fromId];
+                            delegateMonitor.failures[delegate] = [fromId];
                             saveDelegateMonitor().then(function (res) {
                                 resolve("The watching has been activated for: " + delegate);
                             }, function (err) {
@@ -243,9 +258,9 @@ exports.monitoring = function (command, delegate, fromId){
                     // check if is already in
                     isWatching(delegate).then(function (res) {
                         // check chat id
-                        if( (i = (delegateMonitor[delegate].indexOf (fromId))) != -1){
+                        if( (i = (delegateMonitor.failures[delegate].indexOf (fromId))) != -1){
                             // from same chat id
-                            delegateMonitor[delegate].splice (i, 1);
+                            delegateMonitor.failures[delegate].splice (i, 1);
                             saveDelegateMonitor().then(function (res) {
                                 resolve("The monitoring for " + delegate + " has been stopped");
                             }, function (err) {
@@ -270,6 +285,10 @@ exports.monitoring = function (command, delegate, fromId){
     });
 }
 
+/*
+    TODO  functions.checkLastForger
+*/
+
 exports.checkBlocks = function() {
     // blocks scheduler for alerts
     request('http://' + config.node + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
@@ -279,7 +298,7 @@ exports.checkBlocks = function() {
             var res = JSON.parse(body);
             for (var i = 0; i < res.delegates.length; i++) {
                 // check if the delegate is in monitoring mode
-                if (res.delegates[i].username in delegateMonitor) {
+                if (res.delegates[i].username in delegateMonitor.failures) {
                     // if is in monitoring add to delegateList var
                     delegateList.push(res.delegates[i]);
                 }
@@ -306,7 +325,7 @@ exports.checkBlocks = function() {
                                         alerted [delegateList[i].address] += 1;
 
                                     if (alerted [delegateList[i].address] == 1 || alerted [delegateList[i].address] % 180 == 0) {
-                                        if (delegateList[i].username in delegateMonitor) {
+                                        if (delegateList[i].username in delegateMonitor.failures) {
                                             for (var j = 0; j < delegateMonitor [delegateList[i].username].length; j++)
                                                 bot.sendMessage (delegateMonitor [delegateList[i].username][j], 'Warning! The delegate "' + delegateList[i].username + ' is in red state.');
                                         }
@@ -332,9 +351,9 @@ exports.checkBlocks = function() {
 exports.list = function (chatId) {
     return new Promise(function (resolve, reject) {
         var watching = [];
-        if(!(_.isEmpty(delegateMonitor))){
-            for(var key in delegateMonitor){
-                if((delegateMonitor[key].indexOf(chatId))!=-1)
+        if(!(_.isEmpty(delegateMonitor.failures))){
+            for(var key in delegateMonitor.failures){
+                if((delegateMonitor.failures[key].indexOf(chatId))!=-1)
                     watching.push(key);
             }
             if(watching.length)

@@ -110,6 +110,9 @@ bot.onText(/\/watch (.+)/, function(msg, params) {
 /**
  * List watching list
  */
+
+
+/* TODO Make this with param to list failures or forged obj */
 bot.onText(/\/list/, function (msg) {
     console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
     var fromId = msg.from.id;
@@ -208,6 +211,25 @@ bot.onText(/\/markets (.+)/, function (msg, params) {
     functions.markets(params[1]).then(function(res) {
         bot.sendMessage(fromId, "Last 24 hour markets summary for Lisk by "+ res.exchange + ":\n\nVolume --> " + res.volume + "\nHigh --> " + res.high + "\nLow --> " + res.low + "\nLast --> " + res.last);
     }, function (err) {
+        bot.sendMessage(fromId, err);
+    });
+});
+
+/**
+ * Start / stop delegate forged monitoring
+ */
+
+ /* TODO  functions.forged */ 
+
+bot.onText(/\/forged (.+)/, function(msg, params) {
+    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    var fromId = msg.from.id;
+    var command = params[1].split(" ")[0];
+    var delegate = params[1].split(" ")[1];
+    functions.forged(command, delegate, fromId).then(function(res) {
+        bot.sendMessage(fromId, res);
+    }, function(err) {
+        console.log(err);
         bot.sendMessage(fromId, err);
     });
 });

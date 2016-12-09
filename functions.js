@@ -14,6 +14,7 @@ var del;
 var delegateList = [];
 var alerted = {};
 var alive = {};
+var lastDelegate = {"publicKey":"EMPTY_KEY"}
 
 /*
     TODO  add logic to use the best node for checking blocks etc. as the autorebuilder script
@@ -42,20 +43,6 @@ var loadDelegateMonitor = function () {
 
 var delegateMonitor = loadDelegateMonitor();
 
-/**
- *
- * @param delegate
- * Check if delegate is in watching
- */
-var isWatching = function (delegate) {
-    return new Promise(function (resolve, reject) {
-        if(delegate in delegateMonitor.failures) {
-            resolve(true);
-        } else {
-            reject(false);
-        }
-    })
-}
 
 /**
  *
@@ -87,7 +74,7 @@ var isDelegate = function (delegate) {
                 browseDelegate(pageCounter).then(function(res) {
                     var delegates = res;
                     for (var i = 0; i < delegates.delegates.length; i++) {
-                        console.log(delegates.delegates[i].username)
+                        //console.log(delegates.delegates[i].username)
                         if (delegate.indexOf (delegates.delegates[i].username) != -1) {
                             del = delegates.delegates[i];
                             resolve(true);
@@ -159,13 +146,13 @@ var checkOfficialHeight = function() {
                 var status = JSON.parse(body);
                 resolve(status);
             } else {
-                reject("There is some kind of problem with the official node wallet.shiftnrg.org");
+                reject("There is some kind of problem with the node API calls");
             }
         });
     });
 };
 
-exports.height = function () {
+var height = function () {
     return new Promise(function (resolve, reject) {
         checkOfficialHeight().then(function (res) {
             resolve(res);
@@ -175,7 +162,7 @@ exports.height = function () {
     })
 };
 
-exports.balance = function (delegate) {
+var balance = function (delegate) {
     return new Promise(function (resolve, reject) {
         // checking if is a delegate
         isDelegate(delegate).then(function (res) {
@@ -191,7 +178,7 @@ exports.balance = function (delegate) {
     })
 };
 
-exports.rank = function (delegate) {
+var rank = function (delegate) {
     return new Promise(function (resolve, reject) {
         isDelegate(delegate).then(function (res) {
             resolve(del);
@@ -201,7 +188,7 @@ exports.rank = function (delegate) {
     });
 };
 
-exports.status = function (node) {
+var status = function (node) {
     return new Promise(function (resolve, reject) {
         checkNodeStatus(node).then(function (res) {
             resolve(res);
@@ -211,17 +198,83 @@ exports.status = function (node) {
     });
 };
 
-/*
-    TODO  functions.forged same logic of monitoring start / stop etc
-*/
+/**
+ *
+ * @param delegate
+ * Check if delegate is in watching
+ */
+var isWatching = function (delegate, type) {
+    return new Promise(function (resolve, reject) {
+        if(type == 'monitoring') {
+            if(delegate in delegateMonitor.failures) {
+                resolve(true);
+            } else {
+                reject(false);
+            }
+        }
+        if(type == 'forged') {
+            if(delegate in delegateMonitor.forged) {
+                resolve(true);
+            } else {
+                reject(false);
+            }
+        }
+    })
+}
 
-exports.forged = function (command, delegate, fromId) {
+var forged = function (command, delegate, fromId) {
+    console.log(command, delegate, fromId);
+    var type = 'forged';
     return new Promise(function (resolve, reject){
-
+        if (command == "start" || command == "stop") {
+            isDelegate(delegate).then(function (res) {
+                if(command=="start") {
+                    isWatching(delegate, type).then(function (res) {
+                        if(delegateMonitor.forged[delegate].indexOf (fromId) != -1){
+                            reject("Forging notification on " + delegate + " already activated");
+                        } else {
+                            delegateMonitor.forged[delegate].push (fromId);
+                            saveDelegateMonitor().then(function (res) {
+                                resolve("The forging notification has been activated for: " + delegate);
+                            }, function (err) {
+                                reject(err);
+                            })
+                        }
+                    }, function (err) {
+                        delegateMonitor.forged[delegate] = [fromId];
+                        saveDelegateMonitor().then(function (res) {
+                            resolve("The forging notification has been activated for: " + delegate);
+                        }, function (err) {
+                            reject(err);
+                        })
+                    })
+                } else {
+                    isWatching(delegate, type).then(function (res) {
+                        if( (i = (delegateMonitor.forged[delegate].indexOf (fromId))) != -1){
+                            delegateMonitor.forged[delegate].splice (i, 1);
+                            saveDelegateMonitor().then(function (res) {
+                                resolve("The forging notification for " + delegate + " has been stopped");
+                            }, function (err) {
+                                reject(err);
+                            })
+                        } else {
+                            reject("The forging notification for " + delegate + " has never been activated");
+                        }
+                    }, function (err) {
+                        reject("The forging notification for " + delegate + " has never been activated");
+                    })
+                }
+            }, function (err) {
+                reject("Error, please enter a valid delegate name");
+            });
+        } else {
+            reject("Command rejected.\nYou can only start or stop monitoring your node.")
+        }
     });
 }
 
-exports.monitoring = function (command, delegate, fromId){
+var monitoring = function (command, delegate, fromId){
+    var type = 'monitoring';
     return new Promise(function (resolve, reject){
         if (command == "start" || command == "stop") {
             isDelegate(delegate).then(function (res) {
@@ -229,8 +282,7 @@ exports.monitoring = function (command, delegate, fromId){
                     log.debug("monitoring func: ", "command start");
                     // check if is already in
 
-                        isWatching(delegate).then(function (res) {
-
+                        isWatching(delegate, type).then(function (res) {
                             //if is in --> check if is asked from same chatId
                             if(delegateMonitor.failures[delegate].indexOf (fromId) != -1){
                                 // from same chat id
@@ -256,7 +308,7 @@ exports.monitoring = function (command, delegate, fromId){
                 } else {
                     log.debug("monitoring func: ", "command stop");
                     // check if is already in
-                    isWatching(delegate).then(function (res) {
+                    isWatching(delegate, type).then(function (res) {
                         // check chat id
                         if( (i = (delegateMonitor.failures[delegate].indexOf (fromId))) != -1){
                             // from same chat id
@@ -283,13 +335,51 @@ exports.monitoring = function (command, delegate, fromId){
             reject("Command rejected.\nYou can only start or stop monitoring your node.")
         }
     });
+};
+
+var nextForger = function() {
+    request('http://' + config.node + '/api/delegates/getNextForgers?limit=101', function (error, response, body) {
+        if (!error && response.statusCode == 200) {
+
+            var res = JSON.parse(body);
+            var nextForgerPublicKey = res.delegates[0];
+
+            request('http://' + config.node + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, function (error, response, body) {
+                var delegateInfo = JSON.parse(body);
+
+                if (!error && response.statusCode == 200 && delegateInfo.success == true) {
+                    if(delegateInfo.delegate.username in delegateMonitor.forged){
+                        if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
+                            //console.log(delegateInfo);
+                            //console.log("CAMBIATO!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                            //console.log("CAMBIATO!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                            for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate "' + lastDelegate.username + ' have forged a block right now.');
+                        }else{
+                            //console.log("NON CAMBIATO!! " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                            for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate "' + lastDelegate.username + ' have forged a block right now.');
+                        }
+                    }
+                }else{
+                    //console.log(error);
+                }
+                request('http://' + config.node + '/api/delegates/get?publicKey=' + nextForgerPublicKey, function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        var res2 = JSON.parse(body);
+                        lastDelegate = res2.delegate
+                    }else{
+                        console.log(error);
+                    }
+                });
+            });
+        } else {
+            console.log(error);
+        }
+    });
 }
 
-/*
-    TODO  functions.checkLastForger
-*/
-
-exports.checkBlocks = function() {
+var checkBlocks = function() {
     // blocks scheduler for alerts
     request('http://' + config.node + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
         // getting all delegates
@@ -326,8 +416,8 @@ exports.checkBlocks = function() {
 
                                     if (alerted [delegateList[i].address] == 1 || alerted [delegateList[i].address] % 180 == 0) {
                                         if (delegateList[i].username in delegateMonitor.failures) {
-                                            for (var j = 0; j < delegateMonitor [delegateList[i].username].length; j++)
-                                                bot.sendMessage (delegateMonitor [delegateList[i].username][j], 'Warning! The delegate "' + delegateList[i].username + ' is in red state.');
+                                            for (var j = 0; j < delegateMonitor.failures[delegateList[i].username].length; j++)
+                                                bot.sendMessage (delegateMonitor.failures[delegateList[i].username][j], 'Warning! The delegate "' + delegateList[i].username + ' is in red state.');
                                         }
                                     }
                                 } else {
@@ -348,25 +438,42 @@ exports.checkBlocks = function() {
     });
 };
 
-exports.list = function (chatId) {
+var list = function (chatId, type) {
     return new Promise(function (resolve, reject) {
         var watching = [];
-        if(!(_.isEmpty(delegateMonitor.failures))){
-            for(var key in delegateMonitor.failures){
-                if((delegateMonitor.failures[key].indexOf(chatId))!=-1)
-                    watching.push(key);
-            }
-            if(watching.length)
-                resolve(watching.join(", "));
-            else
+        if(type == 'monitoring') {
+            if(!(_.isEmpty(delegateMonitor.failures))){
+                for(var key in delegateMonitor.failures){
+                    if((delegateMonitor.failures[key].indexOf(chatId))!=-1)
+                        watching.push(key);
+                }
+                if(watching.length)
+                    resolve(watching.join(", "));
+                else
+                    reject("You don't have any delegate under monitoring");
+            } else {
                 reject("You don't have any delegate under monitoring");
-        } else {
-            reject("You don't have any delegate under monitoring");
+            }
+        }
+        if (type == 'forged') {
+            if(!(_.isEmpty(delegateMonitor.forged))){
+                for(var key in delegateMonitor.forged){
+                    if((delegateMonitor.forged[key].indexOf(chatId))!=-1)
+                        watching.push(key);
+                }
+                if(watching.length)
+                    resolve(watching.join(", "));
+                else
+                    reject("You don't have any delegate under monitoring");
+            } else {
+                reject("You don't have any delegate under monitoring");
+            }
         }
     })
 };
 
-exports.uptime = function (delegate) {
+
+var uptime = function (delegate) {
     return new Promise(function (resolve, reject) {
        isDelegate(delegate).then(function (res) {
            resolve("Your uptime is actually: " + del.productivity + "%");
@@ -376,10 +483,9 @@ exports.uptime = function (delegate) {
     });
 };
 
-exports.pkey = function (delegate) {
+var pkey = function (delegate) {
     return new Promise(function (resolve, reject) {
         isDelegate(delegate).then(function (res) {
-            console.log(del);
             resolve("Your public key is actually: " + del.publicKey);
         }, function (err) {
             reject(err);
@@ -387,8 +493,7 @@ exports.pkey = function (delegate) {
     });
 }
 
-exports.findByPkey = function (pkey) {
-    console.log(pkey);
+var findByPkey = function (pkey) {
     return new Promise(function (resolve, reject) {
         var pageCounter = 0;
         var numberOfDelegates = 0;
@@ -417,7 +522,7 @@ exports.findByPkey = function (pkey) {
     });
 };
 
-exports.address = function (delegate) {
+var address = function (delegate) {
     return new Promise(function (resolve, reject) {
         isDelegate(delegate).then(function (res) {
             resolve("Your address is actually: " + del.address);
@@ -427,7 +532,7 @@ exports.address = function (delegate) {
     });
 }
 
-exports.voters = function (delegate) {
+var voters = function (delegate) {
     return new Promise(function (resolve, reject) {
         var voters = [];
         isDelegate(delegate).then(function (res) {
@@ -454,7 +559,7 @@ exports.voters = function (delegate) {
     });
 };
 
-exports.votes = function (delegate) {
+var votes = function (delegate) {
     return new Promise(function (resolve, reject) {
         var votes = [];
         isDelegate(delegate).then(function (res) {
@@ -478,7 +583,7 @@ exports.votes = function (delegate) {
     });
 }
 
-exports.markets  = function (exchange) {
+var markets  = function (exchange) {
     return new Promise(function (resolve, reject) {
         switch (exchange) {
             case "bittrex":
@@ -537,3 +642,22 @@ exports.markets  = function (exchange) {
         }
     });
 };
+
+module.exports = {
+  markets: markets,
+  votes: votes,
+  voters: voters,
+  address: address,
+  findByPkey: findByPkey,
+  pkey: pkey,
+  uptime: uptime,
+  list: list,
+  checkBlocks: checkBlocks,
+  nextForger: nextForger,
+  monitoring: monitoring,
+  forged: forged,
+  status: status,
+  rank: rank,
+  balance: balance,
+  height: height
+}

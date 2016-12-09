@@ -350,11 +350,11 @@ var nextForger = function() {
                             //console.log("CAMBIATO!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
                             //console.log("CAMBIATO!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
                             for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate "' + lastDelegate.username + ' have forged a block right now.');
+                                bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' have forged a block right now.');
                         }else{
                             //console.log("NON CAMBIATO!! " + lastDelegate.username + " - " + delegateInfo.delegate.username)
                             for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate "' + lastDelegate.username + ' have forged a block right now.');
+                                bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
                         }
                     }
                 }else{

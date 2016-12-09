@@ -115,7 +115,10 @@ bot.onText(/\/list (.+)/, function (msg, params) {
     console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
     var fromId = msg.from.id;
     functions.list(fromId, params[1]).then(function(res) {
-        bot.sendMessage(fromId, "You are watching the following delegates: "+res);
+		if(params[1] == 'monitoring')
+        	bot.sendMessage(fromId, "You are watching the following delegates: "+res);
+		if(params[1] == 'forged')
+			bot.sendMessage(fromId, "Forging notification are active the following delegates: "+res);
     }, function (err) {
         bot.sendMessage(fromId, err);
     });

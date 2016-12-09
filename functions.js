@@ -16,10 +16,6 @@ var alerted = {};
 var alive = {};
 var lastDelegate = {"publicKey":"EMPTY_KEY"}
 
-/*
-    TODO  add logic to use the best node for checking blocks etc. as the autorebuilder script
-*/
-
 /**
  * Save or load delegate in monitor
  */

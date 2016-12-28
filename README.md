@@ -12,7 +12,7 @@ Explore the Lisk network retrieving information about your delegate
     - /balance delegateName (check balance for delegate name)
     - /rank delegateName (check rank for delegate)
     - /markets bittrex | poloniex | bitsquare (check last 24h markets)
-    - /height (check height from an official node)
+    - /height (check height from node with the highest one)
 
     - /status IP (check height from delegate node) --> ask to liskit delegate the BOT IP so you can whitelist it
 

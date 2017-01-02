@@ -380,25 +380,26 @@ var monitoring = function (command, delegate, fromId){
 
 var nextForger = function() {
     chooseNode().then(function(res) {
-        request('http://' + nodeToUse + '/api/delegates/getNextForgers?limit=101', function (error, response, body) {
+        let localNode = nodeToUse;
+        request('http://' + localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
 
                 var res = JSON.parse(body);
                 var nextForgerPublicKey = res.delegates[0];
 
-                request('http://' + nodeToUse + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, function (error, response, body) {
+                request('http://' + localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
                     var delegateInfo = JSON.parse(body);
 
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
                         if(delegateInfo.delegate.username in delegateMonitor.forged){
                             if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
-                                //console.log(delegateInfo);
-                                //console.log("CAMBIATO!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                //console.log("CAMBIATO!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                // console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                // console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' have forged a block right now.');
                             }else{
-                                //console.log("NON CAMBIATO!! " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                // console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                // console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
                             }
@@ -406,7 +407,7 @@ var nextForger = function() {
                     }else{
                         //console.log(error);
                     }
-                    request('http://' + nodeToUse + '/api/delegates/get?publicKey=' + nextForgerPublicKey, function (error, response, body) {
+                    request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
                         if (!error && response.statusCode == 200) {
                             var res2 = JSON.parse(body);
                             lastDelegate = res2.delegate
@@ -427,7 +428,8 @@ var nextForger = function() {
 var checkBlocks = function() {
     // blocks scheduler for alerts
     chooseNode().then(function(res) {
-        request('http://' + nodeToUse + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
+        let localNode = nodeToUse;
+        request('http://' + localNode + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
             // getting all delegates
             if (!error && response.statusCode == 200) {
                 delegateList = [];
@@ -440,11 +442,11 @@ var checkBlocks = function() {
                     }
                 }
                 // checking blocks
-                request('http://' + nodeToUse + '/api/blocks?limit=100&orderBy=height:desc', function (error, response, body) {
+                request('http://' + localNode + '/api/blocks?limit=100&orderBy=height:desc', function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         var data = JSON.parse(body);
                         // checking blocks shifting by 100
-                        request('http://' + nodeToUse + '/api/blocks?limit=100&offset=100&orderBy=height:desc', function (error, response, body) {
+                        request('http://' + localNode + '/api/blocks?limit=100&offset=100&orderBy=height:desc', function (error, response, body) {
                             if (!error && response.statusCode == 200) {
                                 var data2 = JSON.parse(body);
                                 data.blocks = data.blocks.concat(data2.blocks);

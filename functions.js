@@ -31,7 +31,7 @@ var chooseNode = function() {
                         if((data.peers[x].ip+':'+data.peers[x].port) in rejected) {
                             x+=1
                         } else {
-                            checkNodeToUse = data.peers[x].ip + ':7000';
+                            checkNodeToUse = data.peers[x].ip + ':8000';
                             x=0;
                             break;
                         }
@@ -47,7 +47,7 @@ var chooseNode = function() {
                     }
                 });
             } else {
-                reject(config.nodeToCompareWith +' has some problem');
+                reject(config.node +' has some problem');
             }
         });
     });
@@ -393,13 +393,13 @@ var nextForger = function() {
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
                         if(delegateInfo.delegate.username in delegateMonitor.forged){
                             if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
-                                // console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                // console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                 console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                 console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' have forged a block right now.');
                             }else{
-                                // console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                // console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                 console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                 console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
                             }

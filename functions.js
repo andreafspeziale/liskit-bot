@@ -380,7 +380,8 @@ var monitoring = function (command, delegate, fromId){
 
 var nextForger = function() {
     chooseNode().then(function(res) {
-        let localNode = nodeToUse;
+        let localNode = config.node;
+        console.log(localNode)
         request('http://' + localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
 
@@ -388,6 +389,7 @@ var nextForger = function() {
                 var nextForgerPublicKey = res.delegates[0];
 
                 request('http://' + localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
+                    console.log(localNode)
                     var delegateInfo = JSON.parse(body);
 
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
@@ -408,6 +410,7 @@ var nextForger = function() {
                         //console.log(error);
                     }
                     request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
+                        console.log(localNode)
                         if (!error && response.statusCode == 200) {
                             var res2 = JSON.parse(body);
                             lastDelegate = res2.delegate

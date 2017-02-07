@@ -380,7 +380,7 @@ var monitoring = function (command, delegate, fromId){
 
 var nextForger = function() {
     chooseNode().then(function(res) {
-        let localNode = config.node;
+        let localNode = nodeToUse;
         console.log(localNode)
         request('http://' + localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
@@ -388,6 +388,8 @@ var nextForger = function() {
                 var res = JSON.parse(body);
                 var nextForgerPublicKey = res.delegates[0];
 
+
+                setTimeout(function(){
                 request('http://' + localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
                     console.log(localNode)
                     var delegateInfo = JSON.parse(body);
@@ -409,16 +411,19 @@ var nextForger = function() {
                     }else{
                         //console.log(error);
                     }
-                    request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
-                        console.log(localNode)
-                        if (!error && response.statusCode == 200) {
-                            var res2 = JSON.parse(body);
-                            lastDelegate = res2.delegate
-                        }else{
-                            console.log(error);
-                        }
-                    });
-                });
+
+                        request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
+
+                            if (!error && response.statusCode == 200) {
+                                var res2 = JSON.parse(body);
+                                lastDelegate = res2.delegate;
+                                console.log(lastDelegate);
+                            }else{
+                                console.log(error);
+                            }
+                        });
+
+                });},5000)
             } else {
                 console.log(error);
             }

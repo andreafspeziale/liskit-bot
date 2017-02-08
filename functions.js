@@ -389,28 +389,28 @@ var nextForger = function() {
                 var nextForgerPublicKey = res.delegates[0];
 
 
-                setTimeout(function(){
+                //setTimeout(function(){
                 request('http://' + localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
                     //console.log(localNode)
                     var delegateInfo = JSON.parse(body);
 
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
-                        if(delegateInfo.delegate.username in delegateMonitor.forged){
+                        //if(delegateInfo.delegate.username in delegateMonitor.forged){
                             if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
                                  console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
                                  console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                    bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' have forged a block right now.');
+                                //for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                    //bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' have forged a block right now.');
                             }else{
                                  console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
                                  console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                    bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
+                                //for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                    //bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
                             }
                         }
-                    }else{
-                        console.log(error);
-                    }
+                    //}else{
+                        //console.log(error);
+                    //}
 
                         request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
 
@@ -422,7 +422,7 @@ var nextForger = function() {
                             }
                         });
 
-                });},5000)
+                });//},5000)
             } else {
                 console.log(error);
             }

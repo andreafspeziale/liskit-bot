@@ -389,7 +389,7 @@ var nextForger = function() {
                 var nextForgerPublicKey = res.delegates[0];
 
 
-                setTimeout(function(){
+                //setTimeout(function(){
                 request('http://' + localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
                     console.log(localNode)
                     var delegateInfo = JSON.parse(body);
@@ -423,7 +423,7 @@ var nextForger = function() {
                             }
                         });
 
-                });},5000)
+                });//},5000)
             } else {
                 console.log(error);
             }

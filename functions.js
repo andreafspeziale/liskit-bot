@@ -395,22 +395,35 @@ var nextForger = function() {
                     var delegateInfo = JSON.parse(body);
 
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
-                        //if(delegateInfo.delegate.username in delegateMonitor.forged){
+                        if(delegateInfo.delegate.username in delegateMonitor.forged){
                             if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
                                  console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
                                  console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                //for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                    //bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' have forged a block right now.');
-                            }else{
-                                 console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                 console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                 console.log("CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                                 console.log("CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
+                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' produced a block right now.');
+                            }
+                            if(delegateInfo.delegate.missedblocks != lastDelegate.missedblocks){
+                                console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                console.log("CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                                console.log("CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
+                                for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                    bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
+                            }
+                            // else{
+                            //      console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                            //      console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                            //      console.log("NOT CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                            //      console.log("NOT CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
                                 //for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                     //bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
-                            }
+                            //}
                         }
-                    //}else{
-                        //console.log(error);
-                    //}
+                    }else{
+                        console.log(error);
+                    }
 
                         request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
 

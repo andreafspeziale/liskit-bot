@@ -379,9 +379,9 @@ var monitoring = function (command, delegate, fromId){
 };
 
 var nextForger = function() {
-    //chooseNode().then(function(res) {
-        let localNode = config.node;
-        //console.log(localNode)
+    chooseNode().then(function(res) {
+        let localNode = nodeToUse;
+        console.log(localNode)
         request('http://' + localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
 
@@ -440,9 +440,9 @@ var nextForger = function() {
                 console.log(error);
             }
         });
-    //}, function (err) {
-      //  console.log("[" + new Date().toString() + "] | " + err)
-    //});
+    }, function (err) {
+       console.log("[" + new Date().toString() + "] | " + err)
+    });
 }
 
 var checkBlocks = function() {

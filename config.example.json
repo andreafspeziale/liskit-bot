@@ -1,5 +1,5 @@
 {
-	"publicNodes": ["liskworld.info:8000","login.lisk.io","wallet.lisknode.io","liskwallet.punkrock.me","lisknode.grumlin.com"],
+	"publicNodes": ["http://liskworld.info:8000","https://login.lisk.io","https://wallet.lisknode.io","https://liskwallet.punkrock.me","https://lisknode.grumlin.com"],
 	"telegram": {
 		"token": ""
 	}

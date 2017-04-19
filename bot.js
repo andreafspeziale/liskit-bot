@@ -1,11 +1,10 @@
-var config = require('./config.json');
 var log = require('./log');
-var morgan = require('morgan');
+var config = require('./config.json');
 var functions = require('./functions');
 var TelegramBot = require('node-telegram-bot-api');
 
 process.on('uncaughtException', function (err) {
-	console.log ('Except', err.stack);
+	log.critical ('Except', err.stack);
 });
 
 var bot = new TelegramBot (config.telegram.token, {polling: true});
@@ -15,25 +14,28 @@ var bot = new TelegramBot (config.telegram.token, {polling: true});
  * Starting bot
  */
 bot.onText(/\/start/, function (msg) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status IP (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
  * Help bot
  */
 bot.onText(/\/help/, function (msg) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status IP (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
  * Check bot status
  */
 bot.onText(/\/ping/, function (msg) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
 	var fromId = msg.from.id;
 	bot.sendMessage(fromId, 'Pong :D');
 });
@@ -43,7 +45,8 @@ bot.onText(/\/ping/, function (msg) {
  * Check official blockchain height
  */
 bot.onText(/\/height/, function (msg) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.height().then(function(res) {
         bot.sendMessage(fromId, "The highest blockchain height is "+ res.height +" provided by " + res.ip);
@@ -56,7 +59,8 @@ bot.onText(/\/height/, function (msg) {
  * Check delegate balance
  */
 bot.onText(/\/balance (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
 	var fromId = msg.from.id;
     functions.balance(params[1]).then(function(res) {
         bot.sendMessage(fromId, "Your balance is actually "+res);
@@ -69,7 +73,8 @@ bot.onText(/\/balance (.+)/, function (msg, params) {
  * Check delegate rank
  */
 bot.onText(/\/rank (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
 	var fromId = msg.from.id;
     functions.rank(params[1]).then(function(res) {
         bot.sendMessage(fromId, "Your rank is actually "+res.rate);
@@ -82,9 +87,13 @@ bot.onText(/\/rank (.+)/, function (msg, params) {
  * Check node blockchain status
  */
 bot.onText(/\/status (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    functions.status(params[1]).then(function(res) {
+    var protocol = params[1].split(" ")[0];
+    var ip = params[1].split(" ")[1];
+    var port = params[1].split(" ")[2];
+    functions.status(protocol, ip, port).then(function(res) {
         bot.sendMessage(fromId, "Syncing: " + res.syncing + "\nBlocks: " + res.blocks + "\nHeight: " + res.height);
     }, function (err) {
         bot.sendMessage(fromId, err);
@@ -95,7 +104,8 @@ bot.onText(/\/status (.+)/, function (msg, params) {
  * Start / stop delegate forging monitoring
  */
 bot.onText(/\/watch (.+)/, function(msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     var command = params[1].split(" ")[0];
     var delegate = params[1].split(" ")[1];
@@ -112,7 +122,8 @@ bot.onText(/\/watch (.+)/, function(msg, params) {
  */
 
 bot.onText(/\/list (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.list(fromId, params[1]).then(function(res) {
 		if(params[1] == 'monitoring')
@@ -128,7 +139,8 @@ bot.onText(/\/list (.+)/, function (msg, params) {
  * Delegate productivity
  */
 bot.onText(/\/uptime (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.uptime(params[1]).then(function(res) {
         bot.sendMessage(fromId, res);
@@ -141,7 +153,8 @@ bot.onText(/\/uptime (.+)/, function (msg, params) {
  * Delegate public key
  */
 bot.onText(/\/pkey (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.pkey(params[1]).then(function(res) {
         bot.sendMessage(fromId, res);
@@ -154,7 +167,8 @@ bot.onText(/\/pkey (.+)/, function (msg, params) {
  * Find delegate public key
  */
 bot.onText(/\/findbypkey (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.findByPkey(params[1]).then(function(res) {
         bot.sendMessage(fromId, res);
@@ -167,7 +181,8 @@ bot.onText(/\/findbypkey (.+)/, function (msg, params) {
  * Delegate address
  */
 bot.onText(/\/address (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.address(params[1]).then(function(res) {
         bot.sendMessage(fromId, res);
@@ -180,7 +195,8 @@ bot.onText(/\/address (.+)/, function (msg, params) {
  * List votes received
  */
 bot.onText(/\/voters (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.voters(params[1]).then(function(res) {
         bot.sendMessage(fromId, "The following delegates vote for you (total " + res.total +"): \n" + res.voters);
@@ -194,7 +210,8 @@ bot.onText(/\/voters (.+)/, function (msg, params) {
  * List votes made
  */
 bot.onText(/\/votes (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.votes(params[1]).then(function(res) {
         bot.sendMessage(fromId, (params[1]) + " delegate have vote for the following delegates (total " + res.total +"): \n" + res.votes);
@@ -207,7 +224,8 @@ bot.onText(/\/votes (.+)/, function (msg, params) {
  * List Lisk markets
  */
 bot.onText(/\/markets (.+)/, function (msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     functions.markets(params[1]).then(function(res) {
         bot.sendMessage(fromId, "Last 24 hour markets summary for Lisk by "+ res.exchange + ":\n\nVolume --> " + res.volume + "\nHigh --> " + res.high + "\nLow --> " + res.low + "\nLast --> " + res.last);
@@ -221,7 +239,8 @@ bot.onText(/\/markets (.+)/, function (msg, params) {
  */
 
 bot.onText(/\/forged (.+)/, function(msg, params) {
-    console.log("Command: " + msg.text + "\nAsked by: " + msg.from.username + "\nDate: " + new Date(msg.date*1000).toString() + "\n\n");
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
     var command = params[1].split(" ")[0];
     var delegate = params[1].split(" ")[1];

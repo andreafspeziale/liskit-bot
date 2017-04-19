@@ -7,25 +7,22 @@ var config = require('./config.json');
 var fs = require('fs');
 var TelegramBot = require('node-telegram-bot-api');
 var _ = require('lodash');
+var log = require('./log');
 
 var bot = new TelegramBot (config.telegram.token, {polling: true});
 
 var del;
 var absoluteHeight = 0;
 var bestPublicNode = "";
-
 var delegateList = [];
+var rejected = {};
 var alerted = {};
 var alive = {};
 var lastDelegate = {"publicKey":"EMPTY_KEY"}
-var nodeToUse = config.node;
-var x = 0;
-var rejected = {};
-
 
 var checkHeight = function (node) {
     return new Promise(function (resolve, reject) {
-        request('http://' + node + '/api/loader/status/sync', function (error, response, body) {
+        request(node + '/api/loader/status/sync', function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var height = JSON.parse(body).height;
                 var response = {
@@ -40,34 +37,37 @@ var checkHeight = function (node) {
     })
 }
 
+/**
+ *
+ * Choosing the best node btw the official ones
+ * @returns {Promise}
+ */
+
 var chooseNode = function() {
     return new Promise(function (resolve, reject) {
         var counter = 0;
         for (var node in config.publicNodes) {
             checkHeight(config.publicNodes[node]).then(function (res) {
                 counter += 1;
-                console.log("Node: " + res.node + " with height: " + res.height);
                 if(absoluteHeight < res.height) {
                     absoluteHeight = res.height;
                     bestPublicNode = res.node;
                 }
                 if(counter == config.publicNodes.length) {
-                    console.log("Best node: " + bestPublicNode)
+                    // log.debug("Best node", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             }, function (err) {
-                console.log(err);
+                log.critical("Error in chooseNode",err);
                 counter += 1;
                 if(counter == config.publicNodes.length) {
-                    console.log("Best node: " + bestPublicNode)
+                    // log.debug("Best node", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             })
         }
     })
 };
-
-// chooseNode();
 
 /**
  * Save or load delegate in monitor
@@ -101,15 +101,20 @@ var delegateMonitor = loadDelegateMonitor();
 
  var browseDelegate = function (pageCounter) {
      return new Promise(function (resolve, reject) {
-         request('http://' + config.node + '/api/delegates/?limit=101&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
-             if (!error && response.statusCode == 200) {
-                 var res = JSON.parse(body)
-                 if(res.delegates.length)
-                    resolve(res);
-             } else {
-                 reject(error);
-             }
-         })
+         chooseNode().then(function(res) {
+             var localNode = res;
+             request(localNode + '/api/delegates/?limit=101&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
+                 if (!error && response.statusCode == 200) {
+                     var res = JSON.parse(body)
+                     if (res.delegates.length)
+                         resolve(res);
+                 } else {
+                     reject(error);
+                 }
+             })
+         }, function (err) {
+             log.critical("Error chooseNode",err)
+         });
      });
  };
 
@@ -123,19 +128,18 @@ var isDelegate = function (delegate) {
                 browseDelegate(pageCounter).then(function(res) {
                     var delegates = res;
                     for (var i = 0; i < delegates.delegates.length; i++) {
-                        //console.log(delegates.delegates[i].username)
                         if (delegate.indexOf (delegates.delegates[i].username) != -1) {
                             del = delegates.delegates[i];
                             resolve(true);
                         }
                     }
                 }, function (err) {
-                    console.log(err);
+                    log.critical("Error browseDelegate",err);
                     reject(false);
                 });
             }
         }, function (err) {
-            console.log(err);
+            log.critical("Error browseDelegate",err);
             reject(false);
         });
     });
@@ -148,15 +152,19 @@ var isDelegate = function (delegate) {
  */
 var checkBalance = function () {
     return new Promise(function (resolve, reject) {
-        request('http://' + config.node + '/api/accounts/getBalance?address=' + del.address, function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                var balance = JSON.parse(body);
-                resolve(balance);
-            } else {
-                console.log("checkBalance: something went wrong with the request\n\n");
-                reject("checkBalance: something went wrong with the request\n\n");
-            }
-        })
+        chooseNode().then(function(res) {
+            request(res + '/api/accounts/getBalance?address=' + del.address, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var balance = JSON.parse(body);
+                    resolve(balance);
+                } else {
+                    log.critical("checkBalance: something went wrong with the request\n\n",error);
+                    reject("checkBalance: something went wrong with the request\n\n");
+                }
+            })
+        }, function (err) {
+            log.critical('Error in chooseNode', err);
+        });
     });
 };
 
@@ -164,17 +172,17 @@ var checkBalance = function () {
  *
  * @param node
  * @returns {Promise}
- * Check blockchain statu for a given node
+ * Check blockchain status for a given node
  */
-var checkNodeStatus = function (node) {
+var checkNodeStatus = function (protocol,node,port) {
     return new Promise(function (resolve, reject) {
         if (node.match(/^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$/)) {
-            request('http://' + node + ':9305/api/loader/status/sync',{timeout: 3500}, function (error, response, body) {
+            request(protocol+ "://" + node + ":" + port + '/api/loader/status/sync',{timeout: 3500}, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     resolve(JSON.parse(body));
                 } else {
-                    console.log("checkNodeStatus: there is some kind of problem with the IP\nIP: "+node+"\nError: "+error+"\n\n");
-                    reject("There is some kind of problem with your IP.\nMaybe access permission.\nAdd my IP in your APIs whitelist.");
+                    log.critical("Problem checkNodeStatus","There is some kind of problem with the IP\nIP: "+node+"\nError: "+error+"\n\n");
+                    reject("There is some kind of problem with your request.\nYou asked to check the status on "+ protocol + "://" + node + ":" + port + ".\nCheck your node API access list, ask liskitbot IP to liskit delegate");
                 }
             })
         } else {
@@ -191,8 +199,7 @@ var checkNodeStatus = function (node) {
 var checkOfficialHeight = function() {
     return new Promise(function (resolve, reject) {
         chooseNode().then(function(res) {
-            console.log(res);
-            request('http://' + res + '/api/loader/status/sync', function (error, response, body) {
+            request(res + '/api/loader/status/sync', function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var status = JSON.parse(body);
                     resolve({
@@ -204,7 +211,7 @@ var checkOfficialHeight = function() {
                 }
             });
         }, function (err) {
-            console.log('error ', err);
+            log.critical('Error in chooseNode', err);
         });
     });
 };
@@ -245,9 +252,9 @@ var rank = function (delegate) {
     });
 };
 
-var status = function (node) {
+var status = function (protocol,node,port) {
     return new Promise(function (resolve, reject) {
-        checkNodeStatus(node).then(function (res) {
+        checkNodeStatus(protocol,node,port).then(function (res) {
             resolve(res);
         }, function (err) {
             reject(err);
@@ -280,7 +287,6 @@ var isWatching = function (delegate, type) {
 }
 
 var forged = function (command, delegate, fromId) {
-    console.log(command, delegate, fromId);
     var type = 'forged';
     return new Promise(function (resolve, reject){
         if (command == "start" || command == "stop") {
@@ -336,7 +342,7 @@ var monitoring = function (command, delegate, fromId){
         if (command == "start" || command == "stop") {
             isDelegate(delegate).then(function (res) {
                 if(command=="start") {
-                    log.debug("monitoring func: ", "command start");
+                    // log.debug("monitoring func: ", "command start");
                     // check if is already in
 
                         isWatching(delegate, type).then(function (res) {
@@ -363,7 +369,7 @@ var monitoring = function (command, delegate, fromId){
                             })
                         })
                 } else {
-                    log.debug("monitoring func: ", "command stop");
+                    // log.debug("monitoring func: ", "command stop");
                     // check if is already in
                     isWatching(delegate, type).then(function (res) {
                         // check chat id
@@ -388,7 +394,7 @@ var monitoring = function (command, delegate, fromId){
                 reject("Error, please enter a valid delegate name");
             });
         } else {
-            log.debug("monitoring func: ", "command rejected");
+            log.critical("monitoring func: ", "command rejected");
             reject("Command rejected.\nYou can only start or stop monitoring your node.")
         }
     });
@@ -397,75 +403,72 @@ var monitoring = function (command, delegate, fromId){
 var nextForger = function() {
     chooseNode().then(function(res) {
         let localNode = res;
-        console.log(localNode)
-        request('http://' + localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
+        request(localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
-
                 var res = JSON.parse(body);
                 var nextForgerPublicKey = res.delegates[0];
 
-
                 //setTimeout(function(){
-                request('http://' + localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
-                    //console.log(localNode)
+                request(localNode + '/api/delegates/get?publicKey=' + lastDelegate.publicKey, (error, response, body) => {
+
                     var delegateInfo = JSON.parse(body);
 
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
                         if(delegateInfo.delegate.username in delegateMonitor.forged){
                             if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
-                                 console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                 console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                 console.log("CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
-                                 console.log("CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
+                                 /*log.debug("CHANGED!!",lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                  log.debug("CHANGED!!",lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                  log.debug("CHANGED!!",lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                                  log.debug("CHANGED!!",lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)*/
                                  for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                      bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' produced a block right now.');
                             }
                             if(delegateInfo.delegate.missedblocks != lastDelegate.missedblocks){
-                                console.log("CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                console.log("CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                console.log("CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
-                                console.log("CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
+                                /*log.debug("CHANGED!!"lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                 log.debug("CHANGED!!"lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                 log.debug("CHANGED!!",lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                                 log.debug("CHANGED!!",lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)*/
                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
                             }
-                            // else{
-                            //      console.log("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                            //      console.log("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                            //      console.log("NOT CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
-                            //      console.log("NOT CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
-                                //for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                    //bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
-                            //}
+                            /*else{
+                                 log.critical("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                 log.critical("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                 log.critical("NOT CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                                 log.critical("NOT CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
+                                for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                    bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
+                            }*/
                         }
                     }else{
-                        console.log(error);
+                        // first time will be null --> so error
                     }
-
-                        request('http://' + localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
+                        request(localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
 
                             if (!error && response.statusCode == 200) {
                                 var res2 = JSON.parse(body);
                                 lastDelegate = res2.delegate;
                             }else{
-                                console.log(error);
+                                log.critical("Error in nextForger",error);
                             }
                         });
 
                 });//},5000)
             } else {
-                console.log(error);
+                log.critical("Error in nextForger", error);
             }
         });
     }, function (err) {
-       console.log("[" + new Date().toString() + "] | " + err)
+        log.critical("Error in nextForger", err);
     });
 }
 
 var checkBlocks = function() {
     // blocks scheduler for alerts
     chooseNode().then(function(res) {
+        // log.debug("Check blocks",res)
         let localNode = res;
-        request('http://' + localNode + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
+        request(localNode + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
             // getting all delegates
             if (!error && response.statusCode == 200) {
                 delegateList = [];
@@ -478,11 +481,11 @@ var checkBlocks = function() {
                     }
                 }
                 // checking blocks
-                request('http://' + localNode + '/api/blocks?limit=100&orderBy=height:desc', function (error, response, body) {
+                request(localNode + '/api/blocks?limit=100&orderBy=height:desc', function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         var data = JSON.parse(body);
                         // checking blocks shifting by 100
-                        request('http://' + localNode + '/api/blocks?limit=100&offset=100&orderBy=height:desc', function (error, response, body) {
+                        request(localNode + '/api/blocks?limit=100&offset=100&orderBy=height:desc', function (error, response, body) {
                             if (!error && response.statusCode == 200) {
                                 var data2 = JSON.parse(body);
                                 data.blocks = data.blocks.concat(data2.blocks);
@@ -509,19 +512,19 @@ var checkBlocks = function() {
                                     }
                                 }
                             } else {
-                                console.log("Something wrong with get blocks API, second step");
+                                log.critical("Something wrong with get blocks API, second step",error);
                             }
                         });
                     } else {
-                        console.log("Something wrong with get blocks API, first step");
+                        log.critical("Something wrong with get blocks API, first step",error);
                     }
                 });
             } else {
-                console.log("Something wrong with get delegates");
+                log.critical("Something wrong with get delegates",error);
             }
         });
     }, function (err) {
-        console.log("[" + new Date().toString() + "] | " + err)
+        log.critical("Error chooseNode",err);
     });
 };
 
@@ -598,12 +601,12 @@ var findByPkey = function (pkey) {
                         }
                     }
                 }, function (err) {
-                    console.log(err);
+                    log.critical("Error in findByPkey",err);
                     reject(false);
                 });
             }
         }, function (err) {
-            console.log(err);
+            log.critical("Error in findByPkey",err);
             reject(false);
         });
     });
@@ -621,52 +624,63 @@ var address = function (delegate) {
 
 var voters = function (delegate) {
     return new Promise(function (resolve, reject) {
-        var voters = [];
-        isDelegate(delegate).then(function (res) {
-            request('http://' + config.node + '/api/delegates/voters?publicKey=' + del.publicKey, function (error, response, body) {
-                var data = JSON.parse(body);
-                if (!error && response.statusCode == 200) {
-                    for(var i = 0; i < data.accounts.length; i++){
-                        if(data.accounts[i].username == null)
-                            voters.push(data.accounts[i].address);
-                        else
-                            voters.push(data.accounts[i].username);
+        chooseNode().then(function(res) {
+            var voters = [];
+            var localNode = res;
+            isDelegate(delegate).then(function (res) {
+                request(localNode + '/api/delegates/voters?publicKey=' + del.publicKey, function (error, response, body) {
+                    var data = JSON.parse(body);
+                    if (!error && response.statusCode == 200) {
+                        for (var i = 0; i < data.accounts.length; i++) {
+                            if (data.accounts[i].username == null)
+                                voters.push(data.accounts[i].address);
+                            else
+                                voters.push(data.accounts[i].username);
+                        }
+                        resolve({
+                            "voters": voters.join(", "),
+                            "total": data.accounts.length
+                        });
+                    } else {
+                        log.critical("Voters",error);
                     }
-                    resolve({
-                        "voters": voters.join(", "),
-                        "total": data.accounts.length
-                    });
-                }else {
-                    console.log(error);
-                }
-            });
+                });
+            }, function (err) {
+                log.critical("isDelegate",error);
+            })
         }, function (err) {
-            reject(err);
-        })
+            log.critical("Error chooseNode", err)
+        });
     });
 };
 
 var votes = function (delegate) {
     return new Promise(function (resolve, reject) {
-        var votes = [];
-        isDelegate(delegate).then(function (res) {
-            request('http://' + config.node + '/api/accounts/delegates/?address=' + del.address, function (error, response, body) {
-                var data = JSON.parse(body);
-                if (!error && response.statusCode == 200) {
-                    for(var i = 0; i < data.delegates.length; i++){
-                        votes.push(data.delegates[i].username);
+        chooseNode().then(function(res) {
+            var localNode = res;
+            var votes = [];
+            isDelegate(delegate).then(function (res) {
+                request(localNode + '/api/accounts/delegates/?address=' + del.address, function (error, response, body) {
+                    var data = JSON.parse(body);
+                    if (!error && response.statusCode == 200) {
+                        for(var i = 0; i < data.delegates.length; i++){
+                            votes.push(data.delegates[i].username);
+                        }
+                        resolve({
+                            "votes": votes.join(", "),
+                            "total": data.delegates.length
+                        })
+                    }else {
+                        log.critical("Error in votes",error);
                     }
-                    resolve({
-                        "votes": votes.join(", "),
-                        "total": data.delegates.length
-                    })
-                }else {
-                    console.log(error);
-                }
-            });
+                });
+            }, function (err) {
+                log.critical("Error in isDelegate",error);
+                reject(err);
+            })
         }, function (err) {
-            reject(err);
-        })
+            log.critical("Error chooseNode", err)
+        });
     });
 }
 
@@ -685,7 +699,7 @@ var markets  = function (exchange) {
                             "last": data.result[0].Last
                         });
                     }else {
-                        console.log(error);
+                        log.critical("Error in markets - Bittrex",error);
                         reject("Something went wrong with Bittrex API");
                     }
                 });
@@ -702,7 +716,7 @@ var markets  = function (exchange) {
                             "last": data['BTC_LSK'].last
                         });
                     }else {
-                        console.log(error);
+                        log.critical("Error in markets - Poloniex",error);
                         reject("Something went wrong with Poloniex API");
                     }
                 });
@@ -719,7 +733,7 @@ var markets  = function (exchange) {
                              "last": data['lsk_btc'].last
                         });
                     }else {
-                        console.log(error);
+                        log.critical("Error in markets - Bitsquare",error);
                         reject("Something went wrong with Bitsquare API");
                     }
                 });

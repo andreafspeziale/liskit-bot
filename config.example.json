@@ -1,5 +1,5 @@
 {
-	"node": "IP:9305",
+	"publicNodes": ["liskworld.info:8000","login.lisk.io","wallet.lisknode.io","liskwallet.punkrock.me","lisknode.grumlin.com"],
 	"telegram": {
 		"token": ""
 	}

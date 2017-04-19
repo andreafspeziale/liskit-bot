@@ -11,6 +11,9 @@ var _ = require('lodash');
 var bot = new TelegramBot (config.telegram.token, {polling: true});
 
 var del;
+var absoluteHeight = 0;
+var bestPublicNode = "";
+
 var delegateList = [];
 var alerted = {};
 var alive = {};
@@ -19,39 +22,52 @@ var nodeToUse = config.node;
 var x = 0;
 var rejected = {};
 
+
+var checkHeight = function (node) {
+    return new Promise(function (resolve, reject) {
+        request('http://' + node + '/api/loader/status/sync', function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var height = JSON.parse(body).height;
+                var response = {
+                    "node":node,
+                    "height":height
+                };
+                resolve(response);
+            } else {
+                reject('Choosing node: ' + node + ' has some problem');
+            }
+        })
+    })
+}
+
 var chooseNode = function() {
     return new Promise(function (resolve, reject) {
-        request('http://' + config.node + '/api/peers?state=2&orderBy=height:desc', function (error, response, body) {
-            if (!error && response.statusCode == 200) {
-                var data = JSON.parse(body);
-                while(x < data.peers.length) {
-                    if(data.peers[x].height == null){
-                        x+=1
-                    } else {
-                        if((data.peers[x].ip+':'+data.peers[x].port) in rejected) {
-                            x+=1
-                        } else {
-                            checkNodeToUse = data.peers[x].ip + ':8000';
-                            x=0;
-                            break;
-                        }
-                    }
+        var counter = 0;
+        for (var node in config.publicNodes) {
+            checkHeight(config.publicNodes[node]).then(function (res) {
+                counter += 1;
+                console.log("Node: " + res.node + " with height: " + res.height);
+                if(absoluteHeight < res.height) {
+                    absoluteHeight = res.height;
+                    bestPublicNode = res.node;
                 }
-                request('http://' + checkNodeToUse + '/api/peers?state=2&orderBy=height:desc', function (error, response, body) {
-                    if (!error && response.statusCode == 200 && body!='Forbidden') {
-                        nodeToUse = checkNodeToUse;
-                        resolve(nodeToUse);
-                    } else {
-                        rejected[checkNodeToUse] = true;
-                        resolve('nodeToUse not changed | nodeDropped ' + checkNodeToUse);
-                    }
-                });
-            } else {
-                reject(config.node +' has some problem');
-            }
-        });
-    });
+                if(counter == config.publicNodes.length) {
+                    console.log("Best node: " + bestPublicNode)
+                    resolve(bestPublicNode);
+                }
+            }, function (err) {
+                console.log(err);
+                counter += 1;
+                if(counter == config.publicNodes.length) {
+                    console.log("Best node: " + bestPublicNode)
+                    resolve(bestPublicNode);
+                }
+            })
+        }
+    })
 };
+
+// chooseNode();
 
 /**
  * Save or load delegate in monitor
@@ -175,13 +191,13 @@ var checkNodeStatus = function (node) {
 var checkOfficialHeight = function() {
     return new Promise(function (resolve, reject) {
         chooseNode().then(function(res) {
-            request('http://' + nodeToUse + '/api/loader/status/sync', function (error, response, body) {
+            console.log(res);
+            request('http://' + res + '/api/loader/status/sync', function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var status = JSON.parse(body);
-                    console.log('NodeToUse ',nodeToUse);
                     resolve({
                         height: status.height,
-                        ip: nodeToUse
+                        ip: res
                     });
                 } else {
                     reject("There is some kind of problem with the node API calls");
@@ -380,7 +396,7 @@ var monitoring = function (command, delegate, fromId){
 
 var nextForger = function() {
     chooseNode().then(function(res) {
-        let localNode = nodeToUse;
+        let localNode = res;
         console.log(localNode)
         request('http://' + localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
@@ -448,7 +464,7 @@ var nextForger = function() {
 var checkBlocks = function() {
     // blocks scheduler for alerts
     chooseNode().then(function(res) {
-        let localNode = nodeToUse;
+        let localNode = res;
         request('http://' + localNode + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
             // getting all delegates
             if (!error && response.statusCode == 200) {

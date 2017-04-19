@@ -14,7 +14,7 @@ Explore the Lisk network retrieving information about your delegate
     - /markets bittrex | poloniex | bitsquare (check last 24h markets)
     - /height (check height from node with the highest one)
 
-    - /status IP (check height from delegate node) --> ask to liskit delegate the BOT IP so you can whitelist it
+    - /status http/s IP PORT (check height from delegate node) --> ask to liskit delegate the BOT IP so you can whitelist it
 
     - /list monitoring/forged(show the delegates you are watching/receiving forging notifications)    
     - /uptime delegateName (check uptime for delegate name)

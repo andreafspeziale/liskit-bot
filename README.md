@@ -1,10 +1,10 @@
-#Liskitbot
+# Liskitbot
 > With love by liskit delegate, for donation 10310263204519541551L
 
-##(@LiskitBot and @TestnetLiskitBot)
+## (@LiskitBot and @TestnetLiskitBot)
 Explore the Lisk network retrieving information about your delegate
 
-##Available commands
+## Available commands
 
     - /ping (check bot status)
     - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)

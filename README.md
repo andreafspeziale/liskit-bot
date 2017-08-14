@@ -17,7 +17,7 @@ Explore the Lisk network retrieving information about your delegate
 
     - /status http/s IP PORT (check height from delegate node) --> ask to liskit delegate the BOT IP so you can whitelist it
 
-    - /list monitoring/forged(show the delegates you are watching/receiving forging notifications)    
+    - /list monitoring/forged/voted(show the delegates you are watching/receiving forging and votes notifications)    
     - /uptime delegateName (check uptime for delegate name)
     - /pkey delegateName (check public key for delegate name)
     - /findbypkey pkey (find delegate from public key)

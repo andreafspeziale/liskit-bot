@@ -884,7 +884,7 @@ var getVoteInfo = function () {
                                                                     if (!error && response.statusCode == 200) {
                                                                         voter_balance = JSON.parse(body).balance;
                                                                         // send message
-                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Voted removed! Your delegate lost a vote from ' + tx.senderId + ' with ~' + voter_balance/10000000 + ' LSK');
+                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Voted removed! Your delegate lost a vote from ' + tx.senderId + ' with ~' + voter_balance/100000000 + ' LSK');
                                                                     } else {
                                                                         log.critical("Something wrong with get balance API, get balance in getVoteInfo",error);
                                                                     }

@@ -9,6 +9,7 @@ Explore the Lisk network retrieving information about your delegate
     - /ping (check bot status)
     - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)
     - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)
+    - /voted start/stop delegateName (activating/stopping votes notification on a delegate)
     - /balance delegateName (check balance for delegate name)
     - /rank delegateName (check rank for delegate)
     - /markets bittrex | poloniex | bitsquare (check last 24h markets)

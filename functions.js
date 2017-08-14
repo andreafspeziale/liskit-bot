@@ -99,24 +99,24 @@ var delegateMonitor = loadDelegateMonitor();
  * Chek if is delegate or not
  */
 
- var browseDelegate = function (pageCounter) {
-     return new Promise(function (resolve, reject) {
-         chooseNode().then(function(res) {
-             var localNode = res;
-             request(localNode + '/api/delegates/?limit=101&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
-                 if (!error && response.statusCode == 200) {
-                     var res = JSON.parse(body)
-                     if (res.delegates.length)
-                         resolve(res);
-                 } else {
-                     reject(error);
-                 }
-             })
-         }, function (err) {
-             log.critical("Error chooseNode",err)
-         });
-     });
- };
+var browseDelegate = function (pageCounter) {
+    return new Promise(function (resolve, reject) {
+        chooseNode().then(function(res) {
+            var localNode = res;
+            request(localNode + '/api/delegates/?limit=101&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    var res = JSON.parse(body)
+                    if (res.delegates.length)
+                        resolve(res);
+                } else {
+                    reject(error);
+                }
+            })
+        }, function (err) {
+            log.critical("Error chooseNode",err)
+        });
+    });
+};
 
 var isDelegate = function (delegate) {
     return new Promise(function (resolve, reject) {
@@ -231,6 +231,7 @@ var balance = function (delegate) {
         // checking if is a delegate
         isDelegate(delegate).then(function (res) {
             // checking delegate balance
+            console.log(del)
             checkBalance(del).then(function (res) {
                 resolve((Math.floor( (parseFloat(res.balance * Math.pow(10, -8))) * 100)/ 100).toLocaleString());
             }, function (err) {
@@ -283,7 +284,64 @@ var isWatching = function (delegate, type) {
                 reject(false);
             }
         }
+        if(type == 'voted') {
+            if(delegate in delegateMonitor.voted) {
+                resolve(true);
+            } else {
+                reject(false);
+            }
+        }
     })
+}
+
+var voted = function (command, delegate, fromId) {
+    var type = 'voted';
+    return new Promise(function (resolve, reject){
+        if (command == "start" || command == "stop") {
+            isDelegate(delegate).then(function (res) {
+                if(command=="start") {
+                    isWatching(delegate, type).then(function (res) {
+                        if(delegateMonitor.voted[delegate].indexOf (fromId) != -1){
+                            reject("Voting notification on " + delegate + " already activated");
+                        } else {
+                            delegateMonitor.voted[delegate].push (fromId);
+                            saveDelegateMonitor().then(function (res) {
+                                resolve("The voting notification has been activated for: " + delegate);
+                            }, function (err) {
+                                reject(err);
+                            })
+                        }
+                    }, function (err) {
+                        delegateMonitor.voted[delegate] = [fromId];
+                        saveDelegateMonitor().then(function (res) {
+                            resolve("The voting notification has been activated for: " + delegate);
+                        }, function (err) {
+                            reject(err);
+                        })
+                    })
+                } else {
+                    isWatching(delegate, type).then(function (res) {
+                        if( (i = (delegateMonitor.voted[delegate].indexOf (fromId))) != -1){
+                            delegateMonitor.voted[delegate].splice (i, 1);
+                            saveDelegateMonitor().then(function (res) {
+                                resolve("The voting notification for " + delegate + " has been stopped");
+                            }, function (err) {
+                                reject(err);
+                            })
+                        } else {
+                            reject("The voting notification for " + delegate + " has never been activated");
+                        }
+                    }, function (err) {
+                        reject("The voting notification for " + delegate + " has never been activated");
+                    })
+                }
+            }, function (err) {
+                reject("Error, please enter a valid delegate name");
+            });
+        } else {
+            reject("Command rejected.\nYou can only start or stop monitoring your node.")
+        }
+    });
 }
 
 var forged = function (command, delegate, fromId) {
@@ -345,29 +403,29 @@ var monitoring = function (command, delegate, fromId){
                     // log.debug("monitoring func: ", "command start");
                     // check if is already in
 
-                        isWatching(delegate, type).then(function (res) {
-                            //if is in --> check if is asked from same chatId
-                            if(delegateMonitor.failures[delegate].indexOf (fromId) != -1){
-                                // from same chat id
-                                reject("Waching on " + delegate + " already activated");
-                            } else {
-                                // different chat id, so adding it to watching
-                                delegateMonitor.failures[delegate].push (fromId);
-                                saveDelegateMonitor().then(function (res) {
-                                    resolve("The watching has been activated for: " + delegate);
-                                }, function (err) {
-                                    reject(err);
-                                })
-                            }
-                        }, function (err) {
-                            //if is not in --> enable the watch
-                            delegateMonitor.failures[delegate] = [fromId];
+                    isWatching(delegate, type).then(function (res) {
+                        //if is in --> check if is asked from same chatId
+                        if(delegateMonitor.failures[delegate].indexOf (fromId) != -1){
+                            // from same chat id
+                            reject("Waching on " + delegate + " already activated");
+                        } else {
+                            // different chat id, so adding it to watching
+                            delegateMonitor.failures[delegate].push (fromId);
                             saveDelegateMonitor().then(function (res) {
                                 resolve("The watching has been activated for: " + delegate);
                             }, function (err) {
                                 reject(err);
                             })
+                        }
+                    }, function (err) {
+                        //if is not in --> enable the watch
+                        delegateMonitor.failures[delegate] = [fromId];
+                        saveDelegateMonitor().then(function (res) {
+                            resolve("The watching has been activated for: " + delegate);
+                        }, function (err) {
+                            reject(err);
                         })
+                    })
                 } else {
                     // log.debug("monitoring func: ", "command stop");
                     // check if is already in
@@ -400,6 +458,8 @@ var monitoring = function (command, delegate, fromId){
     });
 };
 
+
+
 var nextForger = function() {
     chooseNode().then(function(res) {
         let localNode = res;
@@ -416,12 +476,12 @@ var nextForger = function() {
                     if (!error && response.statusCode == 200 && delegateInfo.success == true) {
                         if(delegateInfo.delegate.username in delegateMonitor.forged){
                             if(delegateInfo.delegate.producedblocks != lastDelegate.producedblocks){
-                                 /*log.debug("CHANGED!!",lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                  log.debug("CHANGED!!",lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                  log.debug("CHANGED!!",lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
-                                  log.debug("CHANGED!!",lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)*/
-                                 for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' produced a block right now.');
+                                /*log.debug("CHANGED!!",lastDelegate.username + " - " + delegateInfo.delegate.username)
+                                 log.debug("CHANGED!!",lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                                 log.debug("CHANGED!!",lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                                 log.debug("CHANGED!!",lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)*/
+                                for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                                    bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Congratulation! The delegate ' + lastDelegate.username + ' produced a block right now.');
                             }
                             if(delegateInfo.delegate.missedblocks != lastDelegate.missedblocks){
                                 /*log.debug("CHANGED!!"lastDelegate.username + " - " + delegateInfo.delegate.username)
@@ -432,26 +492,26 @@ var nextForger = function() {
                                     bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
                             }
                             /*else{
-                                 log.critical("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
-                                 log.critical("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
-                                 log.critical("NOT CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
-                                 log.critical("NOT CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
-                                for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
-                                    bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
-                            }*/
+                             log.critical("NOT CHANGED!! --> " + lastDelegate.username + " - " + delegateInfo.delegate.username)
+                             log.critical("NOT CHANGED!! --> " + lastDelegate.producedblocks + " - " + delegateInfo.delegate.producedblocks)
+                             log.critical("NOT CHANGED!! --> " + lastDelegate.publicKey + " - " + delegateInfo.delegate.publicKey)
+                             log.critical("NOT CHANGED!! --> " + lastDelegate.missedblocks + " - " + delegateInfo.delegate.missedblocks)
+                             for (var j = 0; j < delegateMonitor.forged[lastDelegate.username].length; j++)
+                             bot.sendMessage (delegateMonitor.forged[lastDelegate.username][j], 'Warning! The delegate ' + lastDelegate.username + ' have missed a block right now.');
+                             }*/
                         }
                     }else{
                         // first time will be null --> so error
                     }
-                        request(localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
+                    request(localNode + '/api/delegates/get?publicKey=' + nextForgerPublicKey, (error, response, body) => {
 
-                            if (!error && response.statusCode == 200) {
-                                var res2 = JSON.parse(body);
-                                lastDelegate = res2.delegate;
-                            }else{
-                                log.critical("Error in nextForger",error);
-                            }
-                        });
+                        if (!error && response.statusCode == 200) {
+                            var res2 = JSON.parse(body);
+                            lastDelegate = res2.delegate;
+                        }else{
+                            log.critical("Error in nextForger",error);
+                        }
+                    });
 
                 });//},5000)
             } else {
@@ -559,17 +619,26 @@ var list = function (chatId, type) {
                 reject("You don't have any delegate under monitoring");
             }
         }
+        if (type == 'voted') {
+            if(!(_.isEmpty(delegateMonitor.voted))){
+                for(var key in delegateMonitor.voted) if((delegateMonitor.voted[key].indexOf(chatId))!=-1) watching.push(key);
+                if(watching.length) resolve(watching.join(", "));
+                else reject("You don't have any delegate under monitoring");
+            } else {
+                reject("You don't have any delegate under monitoring");
+            }
+        }
     })
 };
 
 
 var uptime = function (delegate) {
     return new Promise(function (resolve, reject) {
-       isDelegate(delegate).then(function (res) {
-           resolve("Your uptime is actually: " + del.productivity + "%");
-       }, function (err) {
-           reject(err);
-       })
+        isDelegate(delegate).then(function (res) {
+            resolve("Your uptime is actually: " + del.productivity + "%");
+        }, function (err) {
+            reject(err);
+        })
     });
 };
 
@@ -726,11 +795,11 @@ var markets  = function (exchange) {
                     if (!error && response.statusCode == 200) {
                         var data = JSON.parse(body);
                         resolve({
-                             "exchange": exchange.toUpperCase(),
-                             "volume": "left " + data['lsk_btc'].volume_left + "/ right " + data['lsk_btc'].volume_right,
-                             "high": data['lsk_btc'].high,
-                             "low": data['lsk_btc'].low,
-                             "last": data['lsk_btc'].last
+                            "exchange": exchange.toUpperCase(),
+                            "volume": "left " + data['lsk_btc'].volume_left + "/ right " + data['lsk_btc'].volume_right,
+                            "high": data['lsk_btc'].high,
+                            "low": data['lsk_btc'].low,
+                            "last": data['lsk_btc'].last
                         });
                     }else {
                         log.critical("Error in markets - Bitsquare",error);
@@ -744,21 +813,123 @@ var markets  = function (exchange) {
     });
 };
 
+var getVoteInfo = function () {
+    // blocks scheduler for alerts
+    chooseNode().then(function(res) {
+        // log.debug("Check blocks",res)
+        let localNode = res;
+        request(localNode + '/api/blocks/?limit=1&offset=0&orderBy=height:desc', function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                var block = JSON.parse(body).blocks;
+                // console.log('BLOCKS' , block[0])
+                request(localNode + '/api/transactions?blockId=' + block[0].id , function (error, response, body) {
+                    if (!error && response.statusCode == 200) {
+                        var txs = JSON.parse(body).transactions;
+                        // console.log('TXS', txs)
+                        for ( var tx in txs ) {
+                            if (txs[tx].type == 3 ) {
+                                request(localNode + '/api/transactions/get?id=' + txs[tx].id , function (error, response, body) {
+                                    if (!error && response.statusCode == 200) {
+
+                                        var tx = JSON.parse(body).transaction;
+                                        var voter_balance = 0
+                                        var votes = tx.votes;
+
+                                        // votes added from account
+                                        if (votes.added.length) {
+                                            // for each public key delegate get delegate info
+                                            for ( var vote in votes.added ) {
+                                                // get delegate info
+                                                request(localNode + '/api/delegates/get?publicKey=' + votes.added[vote] , function (error, response, body) {
+                                                    if (!error && response.statusCode == 200) {
+                                                        var delegate = JSON.parse(body).delegate;
+                                                        // if delegate in monitor json
+                                                        if(delegate.username in delegateMonitor.voted) {
+                                                            // get voter balance only once
+                                                            if (voter_balance == 0) {
+                                                                request(localNode + '/api/accounts/getBalance?address=' + tx.senderId , function (error, response, body) {
+                                                                    if (!error && response.statusCode == 200) {
+                                                                        voter_balance = JSON.parse(body).balance;
+                                                                        // send message
+                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Voted! Your delegate gained a vote from ' + tx.senderId + ' with ~' + voter_balance/10000000 + ' LSK');
+                                                                    } else {
+                                                                        log.critical("Something wrong with get balance API, get balance in getVoteInfo",error);
+                                                                    }
+                                                                })
+                                                            }
+                                                        }
+
+                                                    } else {
+                                                        log.critical("Something wrong with get delegate API, get delegate in getVoteInfo",error);
+                                                    }
+                                                })
+                                            }
+                                        }
+
+
+                                        if (votes.deleted.length)
+                                            for ( var vote in votes.deleted ) {
+                                                // get delegate info
+                                                request(localNode + '/api/delegates/get?publicKey=' + votes.deleted[vote] , function (error, response, body) {
+                                                    if (!error && response.statusCode == 200) {
+                                                        var delegate = JSON.parse(body).delegate;
+                                                        // if delegate in monitor json
+                                                        if(delegate.username in delegateMonitor.voted) {
+                                                            // get voter balance only once
+                                                            if (voter_balance == 0) {
+                                                                request(localNode + '/api/accounts/getBalance?address=' + tx.senderId , function (error, response, body) {
+                                                                    if (!error && response.statusCode == 200) {
+                                                                        voter_balance = JSON.parse(body).balance;
+                                                                        // send message
+                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Voted removed! Your delegate lost a vote from ' + tx.senderId + ' with ~' + voter_balance/10000000 + ' LSK');
+                                                                    } else {
+                                                                        log.critical("Something wrong with get balance API, get balance in getVoteInfo",error);
+                                                                    }
+                                                                })
+                                                            }
+                                                        }
+
+                                                    } else {
+                                                        log.critical("Something wrong with get delegate API, get delegate in getVoteInfo",error);
+                                                    }
+                                                })
+                                            }
+                                    } else {
+                                        log.critical("Something wrong with get tx API, get tx in getVoteInfo",error);
+                                    }
+                                })
+                            }
+                        }
+                    } else {
+                        log.critical("Something wrong with get txs API, get txs in getVoteInfo",error);
+                    }
+                })
+            } else {
+                log.critical("Something wrong with get API, get blocks in getVoteInfo",error);
+            }
+        })
+    },function (err) {
+        log.critical("Error chooseNode", err)
+    });
+}
+
 module.exports = {
-  markets: markets,
-  votes: votes,
-  voters: voters,
-  address: address,
-  findByPkey: findByPkey,
-  pkey: pkey,
-  uptime: uptime,
-  list: list,
-  checkBlocks: checkBlocks,
-  nextForger: nextForger,
-  monitoring: monitoring,
-  forged: forged,
-  status: status,
-  rank: rank,
-  balance: balance,
-  height: height
+    markets: markets,
+    votes: votes,
+    voters: voters,
+    address: address,
+    findByPkey: findByPkey,
+    pkey: pkey,
+    uptime: uptime,
+    list: list,
+    checkBlocks: checkBlocks,
+    nextForger: nextForger,
+    getVoteInfo: getVoteInfo,
+    monitoring: monitoring,
+    forged: forged,
+    voted: voted,
+    status: status,
+    rank: rank,
+    balance: balance,
+    height: height
 }

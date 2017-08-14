@@ -17,7 +17,7 @@ bot.onText(/\/start/, function (msg) {
     log.debug("Command",msg.text)
     log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /voted start/stop delegateName (activating/stopping votes monitoring on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
@@ -27,7 +27,7 @@ bot.onText(/\/help/, function (msg) {
     log.debug("Command",msg.text)
     log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /voted start/stop delegateName (activating/stopping votes monitoring on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged (show the delegates you are watching/receiving forging notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
@@ -130,6 +130,8 @@ bot.onText(/\/list (.+)/, function (msg, params) {
         	bot.sendMessage(fromId, "You are watching the following delegates: "+res);
 		if(params[1] == 'forged')
 			bot.sendMessage(fromId, "Forging notification are active the following delegates: "+res);
+        if(params[1] == 'voted')
+            bot.sendMessage(fromId, "Voting notification are active the following delegates: "+res);
     }, function (err) {
         bot.sendMessage(fromId, err);
     });
@@ -252,7 +254,27 @@ bot.onText(/\/forged (.+)/, function(msg, params) {
     });
 });
 
+/**
+ * Start / stop delegate voted monitoring
+ */
+
+bot.onText(/\/voted (.+)/, function(msg, params) {
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
+    var fromId = msg.from.id;
+    var command = params[1].split(" ")[0];
+    var delegate = params[1].split(" ")[1];
+    functions.voted(command, delegate, fromId).then(function(res) {
+        bot.sendMessage(fromId, res);
+    }, function(err) {
+        console.log(err);
+        bot.sendMessage(fromId, err);
+    });
+});
+
 functions.checkBlocks ();
 functions.nextForger();
+functions.getVoteInfo();
 setInterval (functions.checkBlocks, 10000);
 setInterval (functions.nextForger, 10000);
+setInterval (functions.getVoteInfo, 10000);

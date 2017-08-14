@@ -44,24 +44,27 @@ var checkHeight = function (node) {
  */
 
 var chooseNode = function() {
+    console.log('called')
     return new Promise(function (resolve, reject) {
         var counter = 0;
         for (var node in config.publicNodes) {
             checkHeight(config.publicNodes[node]).then(function (res) {
                 counter += 1;
+                console.log("Current node " + res.height + ' ' + res.node)
                 if(absoluteHeight < res.height) {
                     absoluteHeight = res.height;
                     bestPublicNode = res.node;
                 }
                 if(counter == config.publicNodes.length) {
-                    // log.debug("Best node", bestPublicNode)
+                    log.debug("Final best node", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             }, function (err) {
                 log.critical("Error in chooseNode",err);
+                log.debug("Current best node", bestPublicNode)
                 counter += 1;
                 if(counter == config.publicNodes.length) {
-                    // log.debug("Best node", bestPublicNode)
+                    log.debug("Final best node", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             })

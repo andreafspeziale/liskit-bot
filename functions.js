@@ -31,7 +31,8 @@ var checkHeight = function (node) {
                 };
                 resolve(response);
             } else {
-                reject('Choosing node: ' + node + ' has some problem');
+                // console.log('checkHeight ' + node + ' has a problem')
+                reject('checkHeight: ' + node + ' has some problem dropping it');
             }
         })
     })
@@ -44,27 +45,30 @@ var checkHeight = function (node) {
  */
 
 var chooseNode = function() {
-    //console.log('called')
+    // console.log('chooseNode')
     return new Promise(function (resolve, reject) {
         var counter = 0;
         for (var node in config.publicNodes) {
             checkHeight(config.publicNodes[node]).then(function (res) {
+                // console.log('checking ' + config.publicNodes[node])
                 counter += 1;
-                //console.log("Current node " + res.height + ' ' + res.node)
+
+                // console.log("current node " + res.height + ' ' + res.node)
+
                 if(absoluteHeight < res.height) {
                     absoluteHeight = res.height;
                     bestPublicNode = res.node;
                 }
                 if(counter == config.publicNodes.length) {
-                    //log.debug("Final best node", bestPublicNode)
+                    // console.log("final best node", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             }, function (err) {
-                log.critical("Error in chooseNode",err);
+                // console.log('the node has a problem passing over')
                 //log.debug("Current best node", bestPublicNode)
                 counter += 1;
                 if(counter == config.publicNodes.length) {
-                    //log.debug("Final best node", bestPublicNode)
+                    // console.log("final best node 2", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             })
@@ -466,6 +470,7 @@ var monitoring = function (command, delegate, fromId){
 var nextForger = function() {
     chooseNode().then(function(res) {
         let localNode = res;
+        log.debug('nextForger is using ', localNode)
         request(localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
             if (!error && response.statusCode == 200) {
                 var res = JSON.parse(body);
@@ -529,8 +534,8 @@ var nextForger = function() {
 var checkBlocks = function() {
     // blocks scheduler for alerts
     chooseNode().then(function(res) {
-        // log.debug("Check blocks",res)
         let localNode = res;
+        log.debug('checkBlocks is using ', localNode)
         request(localNode + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
             // getting all delegates
             if (!error && response.statusCode == 200) {
@@ -819,8 +824,8 @@ var markets  = function (exchange) {
 var getVoteInfo = function () {
     // blocks scheduler for alerts
     chooseNode().then(function(res) {
-        // log.debug("Check blocks",res)
         let localNode = res;
+        log.debug('getVoteInfo is using ', localNode + '\n')
         request(localNode + '/api/blocks/?limit=1&offset=0&orderBy=height:desc', function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 var block = JSON.parse(body).blocks;

@@ -34,7 +34,6 @@ var checkHeight = function (node) {
                 };
                 resolve(response);
             } else {
-                // console.log('checkHeight ' + node + ' has a problem')
                 reject('checkHeight: ' + node + ' has some problem dropping it');
             }
         })
@@ -47,44 +46,22 @@ var checkHeight = function (node) {
  * @returns {Promise}
  */
 
- // ToDo check best node flow + the call from the other functions | Share it
-
 var chooseNode = function() {
-
-    // check current node API
-
-    // get current node height
-    // get node peers by best height
-    // check current node height with best peer by height
-
-    // if current node has better height keep using current node
-    // if equal keep using current node
-    // if lower peer by best eight its now current node
-
-    // console.log('chooseNode')
     return new Promise(function (resolve, reject) {
         var counter = 0;
         for (var node in config.publicNodes) {
             checkHeight(config.publicNodes[node]).then(function (res) {
-                // console.log('checking ' + config.publicNodes[node])
                 counter += 1;
-
-                // console.log("current node " + res.height + ' ' + res.node)
-
                 if(absoluteHeight < res.height) {
                     absoluteHeight = res.height;
                     bestPublicNode = res.node;
                 }
                 if(counter == config.publicNodes.length) {
-                    // console.log("final best node", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             }, function (err) {
-                // console.log('the node has a problem passing over')
-                //log.debug("Current best node", bestPublicNode)
                 counter += 1;
                 if(counter == config.publicNodes.length) {
-                    // console.log("final best node 2", bestPublicNode)
                     resolve(bestPublicNode);
                 }
             })
@@ -131,8 +108,9 @@ var browseDelegate = function (pageCounter) {
             request(localNode + '/api/delegates/?limit=' + config.network.numberOfDelegate + '&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var res = JSON.parse(body)
-                    if (res.delegates.length)
+                    if (res.delegates.length) {
                         resolve(res);
+                    }
                 } else {
                     reject(error);
                 }
@@ -156,6 +134,8 @@ var isDelegate = function (delegate) {
                         if (delegate.indexOf (delegates.delegates[i].username) != -1) {
                             del = delegates.delegates[i];
                             resolve(true);
+                        } else {
+                            reject(false);
                         }
                     }
                 }, function (err) {
@@ -257,7 +237,6 @@ var balance = function (delegate) {
         // checking if is a delegate
         isDelegate(delegate).then(function (res) {
             // checking delegate balance
-            console.log(del)
             checkBalance(del).then(function (res) {
                 resolve((Math.floor( (parseFloat(res.balance * Math.pow(10, -8))) * 100)/ 100).toLocaleString());
             }, function (err) {
@@ -784,38 +763,44 @@ var markets  = function (exchange) {
     return new Promise(function (resolve, reject) {
         switch (exchange) {
             case "bittrex":
-                request('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-' + config.market.token, function (error, response, body) {
-                    if (!error && response.statusCode == 200) {
-                        var data = JSON.parse(body);
-                        resolve({
-                            "exchange": exchange.toUpperCase(),
-                            "volume": data.result[0].Volume,
-                            "high": data.result[0].High,
-                            "low": data.result[0].Low,
-                            "last": data.result[0].Last
-                        });
-                    }else {
-                        log.critical("Error in markets - Bittrex",error);
-                        reject("Something went wrong with Bittrex API");
-                    }
-                });
+                if(config.market.bittrex) {
+                    request('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-' + config.market.token, function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            var data = JSON.parse(body);
+                            resolve({
+                                "exchange": exchange.toUpperCase(),
+                                "volume": data.result[0].Volume,
+                                "high": data.result[0].High,
+                                "low": data.result[0].Low,
+                                "last": data.result[0].Last
+                            });
+                        }else {
+                            log.critical("Error in markets - Bittrex",error);
+                            reject("Something went wrong with Bittrex API");
+                        }
+                    });
+                } else
+                    reject("bittrex market not available");
                 break;
             case "poloniex":
-                request('https://poloniex.com/public?command=returnTicker', function (error, response, body) {
-                    if (!error && response.statusCode == 200) {
-                        var data = JSON.parse(body);
-                        resolve({
-                            "exchange": exchange.toUpperCase(),
-                            "volume": data['BTC_' + config.market.token].baseVolume,
-                            "high": data['BTC_' + config.market.token].high24hr,
-                            "low": data['BTC_' + config.market.token].low24hr,
-                            "last": data['BTC_' + config.market.token].last
-                        });
-                    }else {
-                        log.critical("Error in markets - Poloniex",error);
-                        reject("Something went wrong with Poloniex API");
-                    }
-                });
+                if(config.market.poloniex) {
+                    request('https://poloniex.com/public?command=returnTicker', function (error, response, body) {
+                        if (!error && response.statusCode == 200) {
+                            var data = JSON.parse(body);
+                            resolve({
+                                "exchange": exchange.toUpperCase(),
+                                "volume": data['BTC_' + config.market.token].baseVolume,
+                                "high": data['BTC_' + config.market.token].high24hr,
+                                "low": data['BTC_' + config.market.token].low24hr,
+                                "last": data['BTC_' + config.market.token].last
+                            });
+                        }else {
+                            log.critical("Error in markets - Poloniex",error);
+                            reject("Something went wrong with Poloniex API");
+                        }
+                    });
+                } else
+                    reject("Poloniex market not available");
                 break;
             default:
                 reject("You can check different markets data with: \n/markets poloniex\n/markets bittrex");

@@ -2,5 +2,5 @@ config.json
 node_modules
 .idea/
 .DS_Store
-shift-bot.log
 monitor.json
+package-lock.json

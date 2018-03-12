@@ -27,10 +27,8 @@ Explore the Lisk or forked Lisk network retrieving information about your delega
     
 ## Deployed bot
 
-    - 
-    -
-    -
-    -
+    - @liskitbot
+    - @asktoshiftbot
     
 ## Contacts
 

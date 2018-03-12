@@ -1,3 +1,4 @@
+var Promise = require('bluebird');
 var log = require('./log');
 var config = require('./config.json');
 var functions = require('./functions');

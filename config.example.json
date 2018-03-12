@@ -1,6 +1,21 @@
 {
-	"publicNodes": ["http://liskworld.info:8000","https://login.lisk.io","https://wallet.lisknode.io","https://liskwallet.punkrock.me","https://lisknode.grumlin.com"],
+	"publicNodes":[],
 	"telegram": {
 		"token": ""
+	},
+	"network": {
+		"token": "",
+		"numberOfDelegate": 0,
+		"offsetOfBlocks": "",
+		"blockTime": 0,
+		"explorer": "",
+		"network": "",
+		"officialWallet": ""
+	},
+	"market": {
+		"available": false,
+		"token": "",
+		"bittrex": false,
+		"poloniex": false
 	}
 }

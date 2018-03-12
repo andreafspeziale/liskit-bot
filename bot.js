@@ -17,7 +17,7 @@ bot.onText(/\/start/, function (msg) {
     log.debug("Command",msg.text)
     log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the Lisk Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /voted start/stop delegateName (activating/stopping votes monitoring on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged/voted (show the delegates you are watching/receiving forging or votes notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey welcome, lets start exploring the ' + config.network.token + ' ' + config.network.network + ' Blockchain with the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /voted start/stop delegateName (activating/stopping votes monitoring on a delegate)\n - /balance delegateName (check balance for delegate name) \n - /markets bittrex | poloniex (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged/voted (show the delegates you are watching/receiving forging or votes notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
@@ -27,7 +27,7 @@ bot.onText(/\/help/, function (msg) {
     log.debug("Command",msg.text)
     log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /voted start/stop delegateName (activating/stopping votes monitoring on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex | bitsquare (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged/voted (show the delegates you are watching/receiving forging or votes notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
+    bot.sendMessage(fromId, 'Hey, take a look to the following commands:\n\n - /help (list of commands)\n - /ping (check bot status)\n - /watch start/stop delegateName (activating/stopping forging monitoring on a delegate)\n - /forged start/stop delegateName (activating/stopping forging block notification on a delegate)\n - /voted start/stop delegateName (activating/stopping votes monitoring on a delegate)\n - /balance delegateName (check balance for delegate name)\n - /markets bittrex | poloniex (check markets data)\n - /rank delegateName (check rank for delegate)\n - /height (check height from node with the highest one)\n - /status http/s IP PORT (check height from delegate node)\n - /list monitoring/forged/voted (show the delegates you are watching/receiving forging or votes notifications)\n - /uptime delegateName (check uptime for delegate name)\n - /pkey delegateName (check public key for delegate name)\n - /findbypkey pkey (find delegate from public key)\n - /address delegateName (check address for delegate name)\n - /voters delegateName (check voters of delegate name)\n - /votes delegateName (check votes made by delegate name)');
 });
 
 /**
@@ -44,6 +44,7 @@ bot.onText(/\/ping/, function (msg) {
 /**
  * Check official blockchain height
  */
+
 bot.onText(/\/height/, function (msg) {
     log.debug("Command",msg.text)
     log.debug("Asked by",msg.from.username + "\n\n")
@@ -223,17 +224,21 @@ bot.onText(/\/votes (.+)/, function (msg, params) {
 });
 
 /**
- * List Lisk markets
+ * List token markets
+ * ToDo enable if config market option is defined
  */
 bot.onText(/\/markets (.+)/, function (msg, params) {
     log.debug("Command",msg.text)
     log.debug("Asked by",msg.from.username + "\n\n")
     var fromId = msg.from.id;
-    functions.markets(params[1]).then(function(res) {
-        bot.sendMessage(fromId, "Last 24 hour markets summary for Lisk by "+ res.exchange + ":\n\nVolume --> " + res.volume + "\nHigh --> " + res.high + "\nLow --> " + res.low + "\nLast --> " + res.last);
-    }, function (err) {
-        bot.sendMessage(fromId, err);
-    });
+    if ( config.market.available ) {
+        functions.markets(params[1]).then(function(res) {
+            bot.sendMessage(fromId, "Last 24 hour markets summary for " + config.network.token + " by "+ res.exchange + ":\n\nVolume --> " + res.volume + "\nHigh --> " + res.high + "\nLow --> " + res.low + "\nLast --> " + res.last);
+        }, function (err) {
+            bot.sendMessage(fromId, err);
+        });
+    } else
+        bot.sendMessage(fromId, "Market not available for " + config.network.token);
 });
 
 /**
@@ -275,6 +280,6 @@ bot.onText(/\/voted (.+)/, function(msg, params) {
 functions.checkBlocks ();
 functions.nextForger();
 functions.getVoteInfo();
-setInterval (functions.checkBlocks, 10000);
-setInterval (functions.nextForger, 10000);
-setInterval (functions.getVoteInfo, 10000);
+setInterval (functions.checkBlocks, config.network.blockTime);
+setInterval (functions.nextForger, config.network.blockTime);
+setInterval (functions.getVoteInfo, config.network.blockTime);

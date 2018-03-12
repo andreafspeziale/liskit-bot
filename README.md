@@ -1,8 +1,8 @@
 # Liskitbot
-> With love by liskit delegate, for donation 10310263204519541551L
+> With love by Lisk official liskit delegate, for donation 10310263204519541551L
 
-## (@LiskitBot and @TestnetLiskitBot)
-Explore the Lisk network retrieving information about your delegate
+## Bot
+Explore the Lisk or forked Lisk network retrieving information about your delegate
 
 ## Available commands
 
@@ -12,7 +12,7 @@ Explore the Lisk network retrieving information about your delegate
     - /voted start/stop delegateName (activating/stopping votes notification on a delegate)
     - /balance delegateName (check balance for delegate name)
     - /rank delegateName (check rank for delegate)
-    - /markets bittrex | poloniex | bitsquare (check last 24h markets)
+    - /markets bittrex | poloniex (check last 24h markets) | if available
     - /height (check height from node with the highest one)
 
     - /status http/s IP PORT (check height from delegate node) --> ask to liskit delegate the BOT IP so you can whitelist it
@@ -24,3 +24,14 @@ Explore the Lisk network retrieving information about your delegate
     - /address delegateName (check address for delegate name)
     - /voters delegateName (check voters of delegate name)
     - /votes delegateName (check votes made by delegate name)
+    
+## Deployed bot
+
+    - 
+    -
+    -
+    -
+    
+## Contacts
+
+Twitter @**liskitHQ**

@@ -1,6 +1,9 @@
 /**
  * Created by andreafspeziale on 21/10/16.
  */
+
+// ToDo clean code from console.log
+
 var log = require ('./log');
 var request = require ('request');
 var config = require('./config.json');
@@ -44,7 +47,20 @@ var checkHeight = function (node) {
  * @returns {Promise}
  */
 
+ // ToDo check best node flow + the call from the other functions | Share it
+
 var chooseNode = function() {
+
+    // check current node API
+
+    // get current node height
+    // get node peers by best height
+    // check current node height with best peer by height
+
+    // if current node has better height keep using current node
+    // if equal keep using current node
+    // if lower peer by best eight its now current node
+
     // console.log('chooseNode')
     return new Promise(function (resolve, reject) {
         var counter = 0;
@@ -106,11 +122,13 @@ var delegateMonitor = loadDelegateMonitor();
  * Chek if is delegate or not
  */
 
+ // ToDo return at least a message saying the Delegate is not in forging rank
+
 var browseDelegate = function (pageCounter) {
     return new Promise(function (resolve, reject) {
         chooseNode().then(function(res) {
             var localNode = res;
-            request(localNode + '/api/delegates/?limit=101&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
+            request(localNode + '/api/delegates/?limit=' + config.network.numberOfDelegate + '&offset=' + pageCounter + '&orderBy=rate:asc', function (error, response, body) {
                 if (!error && response.statusCode == 200) {
                     var res = JSON.parse(body)
                     if (res.delegates.length)
@@ -131,7 +149,7 @@ var isDelegate = function (delegate) {
         var numberOfDelegates = 0;
         browseDelegate(pageCounter).then(function(res) {
             numberOfDelegates = res.totalCount;
-            for(pageCounter; pageCounter < numberOfDelegates; pageCounter += 101) {
+            for(pageCounter; pageCounter < numberOfDelegates; pageCounter += config.network.numberOfDelegate) {
                 browseDelegate(pageCounter).then(function(res) {
                     var delegates = res;
                     for (var i = 0; i < delegates.delegates.length; i++) {
@@ -203,6 +221,7 @@ var checkNodeStatus = function (protocol,node,port) {
  * @returns {Promise}
  * Check official blockchain height
  */
+
 var checkOfficialHeight = function() {
     return new Promise(function (resolve, reject) {
         chooseNode().then(function(res) {
@@ -471,7 +490,7 @@ var nextForger = function() {
     chooseNode().then(function(res) {
         let localNode = res;
         log.debug('nextForger is using ', localNode)
-        request(localNode + '/api/delegates/getNextForgers?limit=101', (error, response, body) => {
+        request(localNode + '/api/delegates/getNextForgers?limit=' + config.network.numberOfDelegate, (error, response, body) => {
             if (!error && response.statusCode == 200) {
                 var res = JSON.parse(body);
                 var nextForgerPublicKey = res.delegates[0];
@@ -536,7 +555,7 @@ var checkBlocks = function() {
     chooseNode().then(function(res) {
         let localNode = res;
         log.debug('checkBlocks is using ', localNode)
-        request(localNode + '/api/delegates/?limit=101&offset=0&orderBy=rate:asc', function (error, response, body) {
+        request(localNode + '/api/delegates/?limit=' + config.network.numberOfDelegate + '&offset=0&orderBy=rate:asc', function (error, response, body) {
             // getting all delegates
             if (!error && response.statusCode == 200) {
                 delegateList = [];
@@ -549,11 +568,11 @@ var checkBlocks = function() {
                     }
                 }
                 // checking blocks
-                request(localNode + '/api/blocks?limit=100&orderBy=height:desc', function (error, response, body) {
+                request(localNode + '/api/blocks?limit=' + config.network.offsetOfBlocks + '&orderBy=height:desc', function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         var data = JSON.parse(body);
                         // checking blocks shifting by 100
-                        request(localNode + '/api/blocks?limit=100&offset=100&orderBy=height:desc', function (error, response, body) {
+                        request(localNode + '/api/blocks?limit=' + config.network.offsetOfBlocks + '&offset=' + config.network.offsetOfBlocks + '&orderBy=height:desc', function (error, response, body) {
                             if (!error && response.statusCode == 200) {
                                 var data2 = JSON.parse(body);
                                 data.blocks = data.blocks.concat(data2.blocks);
@@ -666,7 +685,7 @@ var findByPkey = function (pkey) {
         var numberOfDelegates = 0;
         browseDelegate(pageCounter).then(function(res) {
             numberOfDelegates = res.totalCount;
-            for(pageCounter; pageCounter < numberOfDelegates; pageCounter += 101) {
+            for(pageCounter; pageCounter < numberOfDelegates; pageCounter += config.network.numberOfDelegate) {
                 browseDelegate(pageCounter).then(function(res) {
                     var delegates = res;
                     for (var i = 0; i < delegates.delegates.length; i++) {
@@ -765,7 +784,7 @@ var markets  = function (exchange) {
     return new Promise(function (resolve, reject) {
         switch (exchange) {
             case "bittrex":
-                request('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-lsk', function (error, response, body) {
+                request('https://bittrex.com/api/v1.1/public/getmarketsummary?market=btc-' + config.market.token, function (error, response, body) {
                     if (!error && response.statusCode == 200) {
                         var data = JSON.parse(body);
                         resolve({
@@ -787,10 +806,10 @@ var markets  = function (exchange) {
                         var data = JSON.parse(body);
                         resolve({
                             "exchange": exchange.toUpperCase(),
-                            "volume": data['BTC_LSK'].baseVolume,
-                            "high": data['BTC_LSK'].high24hr,
-                            "low": data['BTC_LSK'].low24hr,
-                            "last": data['BTC_LSK'].last
+                            "volume": data['BTC_' + config.market.token].baseVolume,
+                            "high": data['BTC_' + config.market.token].high24hr,
+                            "low": data['BTC_' + config.market.token].low24hr,
+                            "last": data['BTC_' + config.market.token].last
                         });
                     }else {
                         log.critical("Error in markets - Poloniex",error);
@@ -798,25 +817,8 @@ var markets  = function (exchange) {
                     }
                 });
                 break;
-            case "bitsquare":
-                request('https://market.bitsquare.io/api/ticker/?market=lsk_btc', function (error, response, body) {
-                    if (!error && response.statusCode == 200) {
-                        var data = JSON.parse(body);
-                        resolve({
-                            "exchange": exchange.toUpperCase(),
-                            "volume": "left " + data['lsk_btc'].volume_left + "/ right " + data['lsk_btc'].volume_right,
-                            "high": data['lsk_btc'].high,
-                            "low": data['lsk_btc'].low,
-                            "last": data['lsk_btc'].last
-                        });
-                    }else {
-                        log.critical("Error in markets - Bitsquare",error);
-                        reject("Something went wrong with Bitsquare API");
-                    }
-                });
-                break;
             default:
-                reject("You can check different markets data with: \n/markets poloniex\n/markets bittrex\n/markets bitsquare");
+                reject("You can check different markets data with: \n/markets poloniex\n/markets bittrex");
         }
     });
 };
@@ -859,7 +861,7 @@ var getVoteInfo = function () {
                                                                     if (!error && response.statusCode == 200) {
                                                                         voter_balance = JSON.parse(body).balance;
                                                                         // send message
-                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Voted! Your delegate gained a vote from ' + tx.senderId + ' with ~' + (voter_balance / 100000000).toFixed(2) + ' LSK.\nCheck on the explorer https://explorer.lisk.io/tx/' + tx.id);
+                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Voted! Your delegate gained a vote from ' + tx.senderId + ' with ~' + (voter_balance / 100000000).toFixed(2) + ' ' + config.network.token + '.\nCheck on the explorer https://' + config.network.explorer + '/tx/' + tx.id);
                                                                     } else {
                                                                         log.critical("Something wrong with get balance API, get balance in getVoteInfo",error);
                                                                     }
@@ -889,7 +891,7 @@ var getVoteInfo = function () {
                                                                     if (!error && response.statusCode == 200) {
                                                                         voter_balance = JSON.parse(body).balance;
                                                                         // send message
-                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Vote removed! Your delegate lost a vote from ' + tx.senderId + ' with ~' + (voter_balance/100000000).toFixed(2) + ' LSK.\nCheck on the explorer https://explorer.lisk.io/tx/' + tx.id);
+                                                                        for (var index in delegateMonitor.voted[delegate.username]) bot.sendMessage(delegateMonitor.voted[delegate.username][index], 'Vote removed! Your delegate lost a vote from ' + tx.senderId + ' with ~' + (voter_balance/100000000).toFixed(2) + ' ' + config.network.token + '.\nCheck on the explorer https://' + config.network.explorer + '/tx/' + tx.id);
                                                                     } else {
                                                                         log.critical("Something wrong with get balance API, get balance in getVoteInfo",error);
                                                                     }

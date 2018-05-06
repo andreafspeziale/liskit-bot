@@ -914,9 +914,9 @@ var reward = function(address) {
         request(url, function (error, response, body) {
             if (!error && response.statusCode == 200) {
                 const data = JSON.parse(body);
-                resolve(data.result);
+                data.success ? resolve(data.result) : reject(data.result)
             } else {
-                const message = 'Check your votes or something is wrong with the pool backend'
+                const message = 'Something is wrong with the pool backend'
                 log.critical(message, error);
                 reject(message)
             }

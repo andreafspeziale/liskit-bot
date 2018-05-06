@@ -24,6 +24,8 @@ Explore the Lisk or forked Lisk network retrieving information about your delega
     - /address delegateName (check address for delegate name)
     - /voters delegateName (check voters of delegate name)
     - /votes delegateName (check votes made by delegate name)
+
+    - /reward address (if the address is voting the pool it returns the informations about the pool reward)
     
 ## Deployed bot
 

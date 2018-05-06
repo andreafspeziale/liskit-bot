@@ -288,15 +288,7 @@ bot.onText(/\/reward (.+)/, function(msg, params) {
     var fromId = msg.from.id;
     var address = params[1];
     functions.reward(address).then(function(res) {
-        bot.sendMessage(fromId, 
-            `Your forging information are: 
-            \n\nDays in pool --> ${res.days}
-            \nTo be payed now --> ${res.earn}
-            \nPayment threshold --> ${res.payment_threshold/100000000} ${config.network.token}
-            \nTransaction cost --> ${res.transaction_cost/100000000} ${config.network.token}
-            \nAddress --> ${res.address}
-            \nBalance --> ${res.voter_balance/100000000} ${config.network.token}
-        `);
+        bot.sendMessage(fromId,`Your forging information are:\n\n Days in pool --> ${res.days}\n To be payed now --> ${res.earn}\n Payment threshold --> ${res.payment_threshold/100000000} ${config.network.token}\n Transaction cost --> ${res.transaction_cost/100000000} ${config.network.token}\n Address --> ${res.address}\n Balance --> ${res.voter_balance/100000000} ${config.network.token}`);
     }, function(err) {
         console.log(err);
         bot.sendMessage(fromId, err);

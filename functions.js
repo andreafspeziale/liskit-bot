@@ -916,7 +916,7 @@ var reward = function(address) {
                 const data = JSON.parse(body);
                 resolve(data.result);
             } else {
-                const message = 'Something wrong with the pool backend'
+                const message = 'Check your votes or something is wrong with the pool backend'
                 log.critical(message, error);
                 reject(message)
             }

@@ -17,5 +17,8 @@
 		"token": "",
 		"bittrex": false,
 		"poloniex": false
+	},
+	"backend": {
+		"ip": ""
 	}
 }

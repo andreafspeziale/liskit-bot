@@ -278,6 +278,31 @@ bot.onText(/\/voted (.+)/, function(msg, params) {
     });
 });
 
+/**
+ * Reward
+ */
+
+bot.onText(/\/reward (.+)/, function(msg, params) {
+    log.debug("Command",msg.text)
+    log.debug("Asked by",msg.from.username + "\n\n")
+    var fromId = msg.from.id;
+    var address = params[1];
+    functions.reward(address).then(function(res) {
+        bot.sendMessage(fromId, 
+            `Your forging information are: 
+            \n\nDays in pool --> ${res.days}
+            \nTo be payed now --> ${res.earn}
+            \nPayment threshold --> ${res.payment_threshold/100000000} ${config.network.token}
+            \nTransaction cost --> ${res.transaction_cost/100000000} ${config.network.token}
+            \nAddress --> ${res.address}
+            \nBalance --> ${res.voter_balance/100000000} ${config.network.token}
+        `);
+    }, function(err) {
+        console.log(err);
+        bot.sendMessage(fromId, err);
+    });
+});
+
 functions.checkBlocks ();
 functions.nextForger();
 functions.getVoteInfo();

@@ -908,6 +908,22 @@ var getVoteInfo = function () {
     });
 }
 
+var reward = function(address) {
+    return new Promise(function (resolve, reject) {
+        let url = `${config.backend.ip}/getforginginfo/${address}`
+        request(url, function (error, response, body) {
+            if (!error && response.statusCode == 200) {
+                const data = JSON.parse(body);
+                resolve(data.result);
+            } else {
+                const message = 'Something wrong with the pool backend'
+                log.critical(message, error);
+                reject(message)
+            }
+        })
+    })
+}
+
 module.exports = {
     markets: markets,
     votes: votes,
@@ -926,5 +942,6 @@ module.exports = {
     status: status,
     rank: rank,
     balance: balance,
-    height: height
+    height: height,
+    reward: reward
 }
